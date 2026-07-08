@@ -149,7 +149,7 @@ const CATALOG_LIBRARY={
   {"id":"f-good","name":"App to SQL","steps":["app1","sql1"]}
  ]
 },
-"Zero-Trust Access":{"meta":{"title":"Zero-Trust Network Access","system":"Enterprise ZTNA Reference","version":"1.0","author":"Architecture","updated":"2026-06-23","classification":"","revisions":[{"v":"1.0","date":"2026-06-23","who":"Architecture","note":"Initial baseline. Identity-centric perimeter; no implicit trust by network position."}]},"zones":[{"t":"Internet \u00b7 Untrusted","y0":18,"y1":108},{"t":"Device & Identity Plane","y0":108,"y1":230},{"t":"Policy Enforcement","y0":230,"y1":350},{"t":"Protected Resources","y0":350,"y1":510},{"t":"Monitoring & SOC","y0":510,"y1":630},{"t":"Resilience","y0":630,"y1":702}],"nodes":{"rmt_usr":{"x":160,"y":62,"l":"Remote Users","zone":"Internet \u00b7 Untrusted","host":"\u2014","cls":"pub","tier":3,"eol":null,"icon":"users"},"mob_usr":{"x":400,"y":62,"l":"Mobile Devices","zone":"Internet \u00b7 Untrusted","host":"\u2014","cls":"pub","tier":3,"eol":null,"icon":"generic"},"ptnr":{"x":640,"y":62,"l":"Partner / B2B","zone":"Internet \u00b7 Untrusted","host":"\u2014","cls":"pub","tier":3,"eol":null,"icon":"users"},"branch":{"x":880,"y":62,"l":"Branch Workers","zone":"Internet \u00b7 Untrusted","host":"SD-WAN","cls":"int","tier":2,"eol":null,"icon":"users"},"entra":{"x":260,"y":168,"l":"Entra ID / IdP","zone":"Device & Identity Plane","host":"Microsoft cloud","cls":"conf","tier":1,"eol":null,"icon":"identity","children":[{"id":"dir_users","l":"User Directory","type":"service","cls":"conf"},{"id":"dir_groups","l":"Groups & Roles","type":"service","cls":"conf"},{"id":"dir_apps","l":"App Registrations","type":"service","cls":"reg"},{"id":"dir_b2b","l":"B2B Guest","type":"zone","cls":"pub"},{"id":"dir_pim","l":"PIM Roles","type":"service","cls":"reg"}],"childEdges":[{"a":"dir_users","b":"dir_groups","proto":"membership"},{"a":"dir_groups","b":"dir_apps","proto":"assignment"},{"a":"dir_pim","b":"dir_groups","proto":"elevates"}]},"intune":{"x":520,"y":168,"l":"Device Compliance","zone":"Device & Identity Plane","host":"Intune / MDM","cls":"conf","tier":1,"eol":null,"icon":"generic"},"ca_pol":{"x":780,"y":168,"l":"Conditional Access","zone":"Device & Identity Plane","host":"Entra CA engine","cls":"reg","tier":1,"eol":null,"icon":"network"},"ztna_px":{"x":260,"y":290,"l":"ZTNA Proxy Cluster","zone":"Policy Enforcement","host":"cloud-POP","cls":"conf","tier":1,"eol":null,"icon":"network","children":[{"id":"px_us","l":"POP US-East","type":"zone","cls":"int","addr":"52.x.x.x"},{"id":"px_eu","l":"POP EU-West","type":"zone","cls":"int","addr":"13.x.x.x"},{"id":"px_ap","l":"POP AP-SE","type":"zone","cls":"int","addr":"54.x.x.x"},{"id":"px_pol","l":"Policy Engine","type":"service","cls":"conf"},{"id":"px_tun","l":"TLS Tunnel","type":"service","cls":"conf","addr":"mTLS 1.3"}],"childEdges":[{"a":"px_pol","b":"px_us","proto":"enforce"},{"a":"px_pol","b":"px_eu","proto":"enforce"},{"a":"px_pol","b":"px_ap","proto":"enforce"},{"a":"px_tun","b":"px_pol","proto":"decrypt\u2192inspect"}]},"mfa_gw":{"x":520,"y":290,"l":"Phish-Resist MFA","zone":"Policy Enforcement","host":"FIDO2 / passkey","cls":"conf","tier":1,"eol":null,"icon":"identity"},"pam":{"x":780,"y":290,"l":"PAM \u00b7 Priv Vault","zone":"Policy Enforcement","host":"dedicated VM","cls":"reg","tier":1,"eol":null,"icon":"identity","children":[{"id":"pam_creds","l":"Cred Vault","type":"volume","cls":"reg"},{"id":"pam_sess","l":"Session Proxy","type":"service","cls":"reg"},{"id":"pam_rec","l":"Session Record","type":"storage","cls":"reg"},{"id":"pam_just","l":"Just-in-Time","type":"service","cls":"reg"}],"childEdges":[{"a":"pam_just","b":"pam_creds","proto":"releases"},{"a":"pam_sess","b":"pam_rec","proto":"records"},{"a":"pam_creds","b":"pam_sess","proto":"injects"}]},"corp_app":{"x":160,"y":430,"l":"Corp Applications","zone":"Protected Resources","host":"on-prem / IaaS","cls":"conf","tier":2,"eol":null,"icon":"server"},"dev_env":{"x":420,"y":430,"l":"Dev & CI Pipeline","zone":"Protected Resources","host":"IaaS","cls":"int","tier":3,"eol":null,"icon":"server"},"fin_sys":{"x":650,"y":430,"l":"Finance & Payroll","zone":"Protected Resources","host":"SaaS / IaaS","cls":"reg","tier":1,"eol":null,"icon":"server"},"db_core":{"x":880,"y":430,"l":"Core DB Cluster","zone":"Protected Resources","host":"on-prem physical","cls":"reg","tier":1,"eol":null,"icon":"db"},"siem":{"x":280,"y":570,"l":"SIEM \u00b7 Log Agg","zone":"Monitoring & SOC","host":"cloud SIEM","cls":"conf","tier":1,"eol":null,"icon":"storage"},"xdr":{"x":560,"y":570,"l":"EDR / XDR","zone":"Monitoring & SOC","host":"SaaS agent","cls":"conf","tier":1,"eol":null,"icon":"generic"},"ir_team":{"x":840,"y":570,"l":"IR \u00b7 SOC Analysts","zone":"Monitoring & SOC","host":"\u2014","cls":"conf","tier":2,"eol":null,"icon":"users"},"immut_bak":{"x":520,"y":665,"l":"Immutable Backup","zone":"Resilience","host":"air-gap object store","cls":"reg","tier":1,"eol":null,"icon":"storage"}},"layers":[{"id":"nerv","organ":"Nervous","arch":"Identity & Policy","color":"var(--nervous)","blend":true,"flow":true,"hub":"entra","edges":[{"a":"entra","b":"intune","proto":"SCIM","port":443,"conn":"internet"},{"a":"intune","b":"ca_pol","proto":"Graph","port":443,"conn":"internet"},{"a":"entra","b":"ca_pol","proto":"OIDC","port":443,"conn":"internet"},{"a":"ca_pol","b":"mfa_gw","proto":"FIDO2","port":443,"conn":"internet"},{"a":"ca_pol","b":"ztna_px","proto":"policy","port":443,"conn":"internet"},{"a":"mfa_gw","b":"ztna_px","proto":"token","port":443,"conn":"internet"},{"a":"entra","b":"ztna_px","proto":"SAML","port":443,"conn":"internet"},{"a":"pam","b":"fin_sys","proto":"session","port":443,"conn":"lan"},{"a":"pam","b":"db_core","proto":"session","port":443,"conn":"lan"}]},{"id":"skel","organ":"Osseous","arch":"Access Fabric","color":"var(--skeleton)","blend":true,"flow":true,"edges":[{"a":"rmt_usr","b":"ztna_px","proto":"HTTPS","port":443,"conn":"internet"},{"a":"mob_usr","b":"ztna_px","proto":"HTTPS","port":443,"conn":"internet"},{"a":"ptnr","b":"ztna_px","proto":"HTTPS","port":443,"conn":"internet"},{"a":"branch","b":"ztna_px","proto":"IPsec","port":4500,"conn":"vpn"},{"a":"ztna_px","b":"corp_app","proto":"HTTPS","port":443,"conn":"lan"},{"a":"ztna_px","b":"dev_env","proto":"HTTPS","port":443,"conn":"lan"},{"a":"ztna_px","b":"fin_sys","proto":"HTTPS","port":443,"conn":"lan"},{"a":"ztna_px","b":"pam","proto":"HTTPS","port":443,"conn":"lan"},{"a":"corp_app","b":"db_core","proto":"TDS","port":1433,"conn":"lan"},{"a":"fin_sys","b":"db_core","proto":"TDS","port":1433,"conn":"lan"}]},{"id":"vasc","organ":"Vascular","arch":"Detection & Response","color":"var(--vascular)","blend":true,"flow":true,"edges":[{"a":"xdr","b":"rmt_usr","proto":"agent","port":443,"conn":"internet"},{"a":"xdr","b":"mob_usr","proto":"agent","port":443,"conn":"internet"},{"a":"xdr","b":"corp_app","proto":"agent","port":443,"conn":"lan"},{"a":"siem","b":"xdr","proto":"syslog","port":514,"conn":"internet"},{"a":"siem","b":"ztna_px","proto":"syslog","port":514,"conn":"internet"},{"a":"siem","b":"ir_team","proto":"alert","port":443,"conn":"internet"},{"a":"xdr","b":"ir_team","proto":"alert","port":443,"conn":"internet"}]},{"id":"data","organ":"Visceral","arch":"Backup & Recovery","color":"var(--lymph)","blend":true,"flow":false,"edges":[{"a":"db_core","b":"immut_bak","proto":"snapshot","conn":"repl","rpo":"4hr","rto":"8hr"},{"a":"fin_sys","b":"immut_bak","proto":"backup","conn":"repl","rpo":"1hr","rto":"4hr"},{"a":"corp_app","b":"immut_bak","proto":"backup","conn":"repl","rpo":"24hr","rto":"24hr"}]}],"flows":[{"id":"f1","name":"Remote access \u2192 Finance","steps":["rmt_usr","ztna_px","mfa_gw","pam","fin_sys","db_core"],"note":"All access authenticated at IdP, device-compliant, MFA-gated, brokered through PAM. No lateral movement possible \u2014 workloads never see raw credentials."},{"id":"f2","name":"Identity chain: device \u2192 policy \u2192 access","steps":["intune","ca_pol","ztna_px","corp_app"],"note":"Conditional Access evaluates device health signal from Intune before issuing token to ZTNA proxy."},{"id":"f3","name":"Incident: SOC triage","steps":["xdr","siem","ir_team"],"note":"EDR telemetry aggregates into SIEM; SOC analysts receive correlated alert and open IR playbook."}]}
+"Zero-Trust Access":{__file:"catalogs/zero-trust-access.json"}
 };
 
 /* ============ Scene ============ */
@@ -163,8 +163,58 @@ scene.background=new THREE.Color(0x070b14);
 scene.fog=new THREE.Fog(0x070b14,260,560);
 const camera=new THREE.PerspectiveCamera(46,1,0.1,2000);
 
+/* ============ Space (subtle, fog-exempt) ============ */
+const SPACE=new THREE.Group();scene.add(SPACE);
+function starField(count,size,op){
+ const pos=new Float32Array(count*3);
+ for(let i=0;i<count;i++){const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=650+Math.random()*450;
+  pos[i*3]=r*Math.sin(ph)*Math.cos(th);pos[i*3+1]=r*Math.cos(ph);pos[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));
+ SPACE.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xbfd4ea,size,sizeAttenuation:false,transparent:true,opacity:op,fog:false})));
+}
+starField(900,1.3,0.5);starField(240,2.2,0.75);
+const streaks=[],flybys=[];let nextStreak=6,nextFly=75;
+const FLYEMO=["\u{1F680}","\u{1F6F0}\uFE0F","\u{1F4E1}","\u{1F6F8}","\u{1F697}"];
+function emojiSprite(em){const c=document.createElement("canvas");c.width=c.height=128;const g=c.getContext("2d");
+ g.font="100px serif";g.textAlign="center";g.textBaseline="middle";g.fillText(em,64,70);
+ return new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,opacity:0.95,fog:false,depthWrite:false}));}
+function spawnStreak(){
+ const th=Math.random()*Math.PI*2;
+ const pos=new THREE.Vector3(Math.cos(th)*820,160+Math.random()*260,Math.sin(th)*820);
+ const vel=pos.clone().negate().normalize()
+  .add(new THREE.Vector3((Math.random()-.5)*.7,-.25,(Math.random()-.5)*.7)).normalize().multiplyScalar(520+Math.random()*280);
+ const geo=new THREE.BufferGeometry().setFromPoints([pos,pos]);
+ const line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xdff2ff,transparent:true,opacity:0.9,fog:false}));
+ SPACE.add(line);streaks.push({line,pos,vel,life:0,ttl:1.3});
+}
+function spawnFlyby(){
+ const em=FLYEMO[Math.floor(Math.random()*FLYEMO.length)];
+ const s=emojiSprite(em);s.scale.set(17,17,1);
+ const th=Math.random()*Math.PI*2,th2=th+Math.PI+(Math.random()-.5);
+ const a=new THREE.Vector3(Math.cos(th)*720,110+Math.random()*230,Math.sin(th)*720);
+ const b=new THREE.Vector3(Math.cos(th2)*720,90+Math.random()*230,Math.sin(th2)*720);
+ s.position.copy(a);SPACE.add(s);
+ flybys.push({s,a,b,t:0,dur:24+Math.random()*16});
+}
+function updateSpace(dt){
+ SPACE.rotation.y+=dt*0.0035;
+ if(!RM){
+  nextStreak-=dt;if(nextStreak<=0){spawnStreak();nextStreak=6+Math.random()*12;}
+  nextFly-=dt;if(nextFly<=0){spawnFlyby();nextFly=110+Math.random()*180;}
+ }
+ for(let i=streaks.length-1;i>=0;i--){const st=streaks[i];st.life+=dt;
+  st.pos.addScaledVector(st.vel,dt);
+  const tail=st.pos.clone().addScaledVector(st.vel,-0.07);
+  st.line.geometry.setFromPoints([st.pos,tail]);
+  st.line.material.opacity=0.9*(1-st.life/st.ttl);
+  if(st.life>=st.ttl){SPACE.remove(st.line);st.line.geometry.dispose();streaks.splice(i,1);}}
+ for(let i=flybys.length-1;i>=0;i--){const f=flybys[i];f.t+=dt;const k=f.t/f.dur;
+  f.s.position.lerpVectors(f.a,f.b,k);f.s.position.y+=Math.sin(f.t*1.4)*2.5;
+  if(k>=1){SPACE.remove(f.s);flybys.splice(i,1);}}
+}
+
 /* Minimal orbit controls */
-const orbit={theta:-0.85,phi:1.02,dist:230,target:new THREE.Vector3(0,18,0)};
+const orbit={theta:2.29,phi:1.02,dist:230,target:new THREE.Vector3(0,18,0)};
 const HOME=JSON.parse(JSON.stringify({theta:orbit.theta,phi:orbit.phi,dist:orbit.dist,target:{x:0,y:18,z:0}}));
 function applyCam(){
  const t=orbit.target;
@@ -174,18 +224,37 @@ function applyCam(){
   t.z+orbit.dist*Math.sin(orbit.phi)*Math.sin(orbit.theta));
  camera.lookAt(t);
 }
-let drag=null;
-renderer.domElement.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button===2};renderer.domElement.setPointerCapture(e.pointerId);});
+renderer.domElement.style.touchAction="none"; /* stop the browser stealing swipes/pinch */
+const ptrs=new Map();let drag=null,pinch=null;
+function midDist(){const a=[...ptrs.values()];
+ return{mx:(a[0].x+a[1].x)/2,my:(a[0].y+a[1].y)/2,d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};}
+renderer.domElement.addEventListener("pointerdown",e=>{
+ renderer.domElement.setPointerCapture(e.pointerId);
+ ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptrs.size===2){pinch=midDist();drag=null;}
+ else if(ptrs.size===1)drag={x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button===2,moved:0};
+});
 renderer.domElement.addEventListener("pointermove",e=>{
+ if(!ptrs.has(e.pointerId)){hover(e);return;}
+ ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptrs.size===2&&pinch){const m=midDist();
+  if(m.d>4)orbit.dist=Math.min(Math.max(orbit.dist*(pinch.d/m.d),60),620);
+  const s=orbit.dist/700;
+  const right=new THREE.Vector3().subVectors(camera.position,orbit.target).cross(camera.up).normalize();
+  orbit.target.addScaledVector(right,-(m.mx-pinch.mx)*s);orbit.target.y+=(m.my-pinch.my)*s;
+  pinch=m;focusAnim=null;preFocusDist=null;return;}
  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
   if(drag.pan){const s=orbit.dist/700;
    const right=new THREE.Vector3().subVectors(camera.position,orbit.target).cross(camera.up).normalize();
    orbit.target.addScaledVector(right,dx*s);orbit.target.y+=dy*s;}
   else{orbit.theta+=dx*0.005;orbit.phi=Math.min(Math.max(orbit.phi-dy*0.005,0.15),1.5);}
   drag.moved=(drag.moved||0)+Math.abs(dx)+Math.abs(dy);}
- else hover(e);
 });
-renderer.domElement.addEventListener("pointerup",e=>{if(drag&&(drag.moved||0)<5)pick(e);drag=null;});
+function endPtr(e){ptrs.delete(e.pointerId);
+ if(ptrs.size<2)pinch=null;
+ if(ptrs.size===0){if(drag&&(drag.moved||0)<5)pick(e);drag=null;}}
+renderer.domElement.addEventListener("pointerup",endPtr);
+renderer.domElement.addEventListener("pointercancel",endPtr);
 renderer.domElement.addEventListener("contextmenu",e=>e.preventDefault());
 renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();focusAnim=null;preFocusDist=null;orbit.dist=Math.min(Math.max(orbit.dist*(1+e.deltaY*0.001),60),620);},{passive:false});
 
@@ -205,6 +274,18 @@ function labelTexture(text,sub,status){
  if(sub){g.fillStyle="#7a8aa0";g.font="20px Consolas,monospace";g.fillText(sub.toUpperCase(),128,104);}
  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;
 }
+function shapeFor(type){const t=String(type||"").toLowerCase();
+ if(/fw|firewall|waf/.test(t))return"wall";
+ if(/nas|storage|s3|blob|bucket|db|sql|data|vault/.test(t))return"drum";
+ if(/\blb\b|balancer|adc|gateway|\bgw\b|proxy/.test(t))return"gem";
+ return"card";}
+function brickTexture(status){const c=document.createElement("canvas");c.width=128;c.height=64;const g=c.getContext("2d");
+ g.fillStyle="#5a262c";g.fillRect(0,0,128,64);
+ g.strokeStyle=status==="error"?"#ff4d5e":"#1a2736";g.lineWidth=3;
+ for(let y=0;y<=64;y+=16){g.beginPath();g.moveTo(0,y);g.lineTo(128,y);g.stroke();}
+ for(let y=0;y<64;y+=16){const off=(y/16)%2?16:0;
+  for(let x=off;x<=128;x+=32){g.beginPath();g.moveTo(x,y);g.lineTo(x,y+16);g.stroke();}}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,1);return t;}
 function wrap(g,text,x,y,maxW,lh){const words=String(text).split(" ");let line="",yy=y;
  for(const w of words){const test=line?line+" "+w:w;
   if(g.measureText(test).width>maxW&&line){g.fillText(line,x,yy);line=w;yy+=lh;}else line=test;}
@@ -257,12 +338,43 @@ function build(cat){
    const n=nodes[id];if(!n)continue;
    const status=VAL.perNode[id]||"ok";
    const sideC=status==="error"?COL.error:status==="warning"?COL.warning:status==="ignored"?COL.ignored:COL.ok;
-   const side=new THREE.MeshBasicMaterial({color:sideC});
-   const top=new THREE.MeshBasicMaterial({map:labelTexture(n.t||n.l||id,n.boundary,status)});
-   const bot=new THREE.MeshBasicMaterial({color:0x0c1322});
-   const mesh=new THREE.Mesh(new THREE.BoxGeometry(13,1.6,7),[side,side,top,bot,side,side]);
-   mesh.position.set(sx(n.x),0.9,sz(n.y));
-   mesh.userData={nodeId:id,layerIdx:i,baseColor:sideC};
+   const name=n.t||n.l||id;
+   const shape=(n.internals&&n.internals.length)?"container":shapeFor(n.type);
+   let mesh,base=sideC;
+   if(shape==="card"){
+    const side=new THREE.MeshBasicMaterial({color:sideC});
+    const top=new THREE.MeshBasicMaterial({map:labelTexture(name,n.boundary,status)});
+    const bot=new THREE.MeshBasicMaterial({color:0x0c1322});
+    mesh=new THREE.Mesh(new THREE.BoxGeometry(13,1.6,7),[side,side,top,bot,side,side]);
+    mesh.position.set(sx(n.x),0.9,sz(n.y));
+   }else{
+    if(shape==="wall"){
+     mesh=new THREE.Mesh(new THREE.BoxGeometry(12,7,2.6),new THREE.MeshBasicMaterial({map:brickTexture(status)}));
+     mesh.position.set(sx(n.x),3.6,sz(n.y));base=0xffffff;
+    }else if(shape==="drum"){
+     mesh=new THREE.Mesh(new THREE.CylinderGeometry(4.2,4.2,5.4,20),
+      new THREE.MeshBasicMaterial({color:status==="ok"?0x1c3d5a:sideC}));
+     mesh.position.set(sx(n.x),2.8,sz(n.y));base=status==="ok"?0x1c3d5a:sideC;
+    }else if(shape==="gem"){
+     mesh=new THREE.Mesh(new THREE.OctahedronGeometry(4.6),
+      new THREE.MeshBasicMaterial({color:status==="ok"?0x274b6d:sideC,transparent:true,opacity:0.93}));
+     mesh.position.set(sx(n.x),4.4,sz(n.y));base=status==="ok"?0x274b6d:sideC;
+    }else{ /* container: translucent shell revealing internals */
+     mesh=new THREE.Mesh(new THREE.BoxGeometry(14,9,9),
+      new THREE.MeshBasicMaterial({color:status==="ok"?0x2b577d:sideC,transparent:true,opacity:0.20,depthWrite:false}));
+     mesh.position.set(sx(n.x),4.6,sz(n.y));base=status==="ok"?0x2b577d:sideC;
+     let k=0;for(const item of(n.internals||[])){const cnt=Math.min(item.count||1,4);
+      for(let q=0;q<cnt&&k<6;q++,k++){
+       const inner=new THREE.Mesh(new THREE.BoxGeometry(2.6,2.2,2.6),new THREE.MeshBasicMaterial({color:0x3fa0c8}));
+       inner.position.set(sx(n.x)-4+(k%3)*4,1.7+Math.floor(k/3)*3,sz(n.y)+((k%2)?1.9:-1.9));
+       g.add(inner);}}
+    }
+    const lbl=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTexture(name,n.boundary,status),transparent:true,fog:false,depthWrite:false}));
+    lbl.scale.set(15,7.5,1);
+    lbl.position.set(sx(n.x),shape==="wall"?9.2:shape==="container"?11.2:8.8,sz(n.y));
+    g.add(lbl);
+   }
+   mesh.userData={nodeId:id,layerIdx:i,baseColor:base};
    g.add(mesh);nodeMeshes.push(mesh);
   }
   world.add(g);layerGroups.push(g);
@@ -372,6 +484,26 @@ function drawFlow(flow,keep){
  flowLine.userData={flow};world.add(flowLine);
 }
 
+
+/* ============ Catalog resolution (repo-integrated) ============ */
+async function resolveCatalog(name){
+ let e=CATALOG_LIBRARY[name];
+ if(e&&e.__file){
+  try{const r=await fetch(e.__file,{cache:"no-store"});
+   if(r.ok){const j=await r.json();
+    if(j&&j.nodes&&j.layers){CATALOG_LIBRARY[name]=j;return j;}}}catch(err){}
+  return null;}
+ return e;
+}
+async function loadRemoteIndex(){
+ try{const r=await fetch("catalogs/index.json",{cache:"no-store"});if(!r.ok)return;
+  const j=await r.json();
+  for(const c of (j.catalogs||[])){const k=c.title||c.file;
+   if(!CATALOG_LIBRARY[k])CATALOG_LIBRARY[k]={__file:c.file.includes("/")?c.file:"catalogs/"+c.file};}
+  if(CAT)ui();
+ }catch(e){}
+}
+
 /* ============ UI ============ */
 function ui(){
  document.getElementById("cattitle").textContent=(CAT.meta&&CAT.meta.title)||"untitled catalog";
@@ -394,7 +526,9 @@ function ui(){
  for(const name of Object.keys(CATALOG_LIBRARY)){
   const b=document.createElement("button");b.textContent=name;
   b.className=(CAT===CATALOG_LIBRARY[name])?"on":"";
-  b.onclick=()=>build(CATALOG_LIBRARY[name]);cats.appendChild(b);
+  b.onclick=async()=>{const c=await resolveCatalog(name);
+   if(c)build(c);else b.textContent=name+" — unavailable offline";};
+  cats.appendChild(b);
  }
  const fl=document.getElementById("flows");fl.innerHTML="";
  (CAT.flows||[]).forEach(f=>{
@@ -436,8 +570,11 @@ addEventListener("drop",async e=>{
 /* ============ Loop ============ */
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 addEventListener("resize",resize);resize();
+let lastT=performance.now();
 function loop(){
  requestAnimationFrame(loop);
+ const now=performance.now(),dt=Math.min((now-lastT)/1000,0.1);lastT=now;
+ updateSpace(dt);
  const ease=RM?1:0.08;
  if(Math.abs(sepTarget-sepNow)>0.0005){sepNow+=(sepTarget-sepNow)*ease;layoutLayers();}
  if(focusAnim){focusAnim.t=RM?1:Math.min(1,focusAnim.t+0.05);
@@ -447,9 +584,18 @@ function loop(){
   if(focusAnim.t>=1)focusAnim=null;}
  applyCam();renderer.render(scene,camera);
 }
-build(CATALOG_LIBRARY["Sovereign Sample"]);
-/* opening moment: fold -> explode, once */
-if(!RM){setTimeout(()=>{sepTarget=1;sep.value=100;},450);}else{sepTarget=1;sepNow=1;sep.value=100;layoutLayers();}
+(async()=>{
+ const p=new URLSearchParams(location.search).get("cat");
+ let first=null;
+ if(p){const path=p.includes("/")?p:"catalogs/"+p;
+  try{const r=await fetch(path,{cache:"no-store"});
+   if(r.ok){const j=await r.json();
+    if(j&&j.nodes&&j.layers){CATALOG_LIBRARY[(j.meta&&j.meta.title)||p]=j;first=j;}}}catch(e){}}
+ build(first||CATALOG_LIBRARY["Sovereign Sample"]);
+ loadRemoteIndex();
+ /* opening moment: fold -> explode, once */
+ if(!RM){setTimeout(()=>{sepTarget=1;sep.value=100;},450);}else{sepTarget=1;sepNow=1;sep.value=100;layoutLayers();}
+})();
 loop();
 </script>
 </body>
