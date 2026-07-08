@@ -2004,6 +2004,7 @@ if('serviceWorker' in navigator){
 
 let _installPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{
+  if(document.getElementById('installBtn')){e.preventDefault();_installPrompt=e;return;}
   e.preventDefault();_installPrompt=e;
   // Show an install chip in the toolbar
   const chip=document.createElement('button');

@@ -21,7 +21,7 @@
       "description": "Manufacturing / critical infrastructure. Hardware data diode enforces one-way OT\u2192IT flow. PLC \u2192 edge \u2192 DMZ \u2192 historian \u2192 analytics. SPOFs overlay lights up the data diode."
     },
     {
-      "file": "examples/sovereign-sample.json",
+      "file": "catalogs/examples/sovereign-sample.json",
       "title": "Sovereign Sample (validation demo)",
       "description": "Phase A rules demo: unmet requirement, boundary violation, blast radius. Deliberately trips the validator."
     }
