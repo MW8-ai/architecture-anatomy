@@ -13,3 +13,5 @@ jobs:
         with: { node-version: '24' }
       - name: Validation engine tests
         run: node test/validate.test.mjs
+      - name: Catalog index smoke
+        run: node scripts/check-catalog-index.mjs
