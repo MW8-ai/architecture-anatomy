@@ -31,7 +31,7 @@
 Layers stop being freeform and declare a **profile** in catalog meta: `"layerProfile": "hybrid" | "onprem" | "cloud" | "osi"`. Each profile is a named, ordered layer set (hybrid: Identity / Network / Compute+Data / Observability … osi: L1–L7 as a teaching catalog). Profiles are data, not code — a JSON file each — so OSI becomes a fun catalog example without infecting the practical default, and switching profiles is switching catalogs, which the picker already does. Default: the Identity+Network-first model the prototype already leans on, consistent across cloud and on-prem.
 
 ## 3. Trace 2.0 — the Path Advisor (the big one)
-Today trace *shows* a route. The redesign makes trace *analyze* one — your S3→firewall→Linux→Collab_Portal example, formalized:
+Today trace *shows* a route. The redesign makes trace *analyze* one — your S3→firewall→Linux→SharePoint example, formalized:
 
 **Deterministic core (extends lib/validate.js):**
 `analyzePath(catalog, steps[]) →` for each hop: boundary crossings (existing rule 3), protocol/port continuity from edge metadata, requires/provides gaps (existing rule 1, scoped to the path), and **missing-intermediary suggestions** from a connector knowledge table: patterns like `storage:object --crosses boundary--> app:collab ⇒ suggests [data gateway, private endpoint]`. The knowledge table is data (`lib/connectors.json`), and its natural seed is **CloudIntelMatrix** — verified per-cloud facts about what connects to what and under which compliance conditions. Know feeds Visualize, again.
