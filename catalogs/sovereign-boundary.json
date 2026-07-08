@@ -1,0 +1,499 @@
+{
+  "meta": {
+    "title": "Sovereign Cloud Boundary",
+    "system": "Commercial \u00b7 GCC \u00b7 GCC High Reference",
+    "version": "1.0",
+    "author": "Architecture",
+    "updated": "2026-06-22",
+    "classification": "UNCLASSIFIED",
+    "classColor": "#3adc165",
+    "scopes": [
+      {
+        "id": "FRM",
+        "t": "FedRAMP Moderate",
+        "c": "#4dd0e1"
+      },
+      {
+        "id": "FRH",
+        "t": "FedRAMP High",
+        "c": "#b794f6"
+      },
+      {
+        "id": "IL4",
+        "t": "DoD IL4 / ITAR",
+        "c": "#ffd166"
+      }
+    ],
+    "revisions": [
+      {
+        "v": "1.0",
+        "date": "2026-06-22",
+        "who": "Architecture",
+        "note": "Models the .com vs .us sovereignty split. Turn on Boundary Crossings + Data Movement to see the non-native commercial ADF to GCC High hop."
+      }
+    ]
+  },
+  "zones": [
+    {
+      "t": "On-premises",
+      "y0": 18,
+      "y1": 150
+    },
+    {
+      "t": "Commercial Plane (.com)",
+      "y0": 150,
+      "y1": 440
+    },
+    {
+      "t": "Azure Government Plane (.us)",
+      "y0": 440,
+      "y1": 702
+    }
+  ],
+  "nodes": {
+    "ad": {
+      "x": 330,
+      "y": 90,
+      "l": "AD DS \u00b7 DCs",
+      "zone": "On-premises",
+      "host": "on-prem DCs",
+      "cls": "reg",
+      "scopes": [],
+      "owner": "IAM",
+      "tier": 1,
+      "eol": null,
+      "children": [
+        {"id":"dc_pdc",  "l":"PDC Emulator",    "type":"service","cls":"reg",  "addr":"dc01.corp"},
+        {"id":"dc_rid",  "l":"RID Master",      "type":"service","cls":"reg",  "addr":"dc02.corp"},
+        {"id":"dc_gcat", "l":"Global Catalog",  "type":"volume", "cls":"conf", "addr":"port 3268"},
+        {"id":"dc_dns",  "l":"AD-integrated DNS","type":"service","cls":"conf","addr":"port 53"},
+        {"id":"dc_sysvol","l":"SYSVOL / GPO",   "type":"volume", "cls":"reg",  "addr":"DFS-R replicated"}
+      ],
+      "childEdges": [
+        {"a":"dc_pdc","b":"dc_gcat","proto":"LDAP"},
+        {"a":"dc_gcat","b":"dc_dns","proto":"SRV records"},
+        {"a":"dc_pdc","b":"dc_sysvol","proto":"GPO apply"}
+      ]
+    },
+    "connect": {
+      "x": 545,
+      "y": 90,
+      "l": "Entra Connect",
+      "zone": "On-premises",
+      "host": "on-prem agent",
+      "cls": "conf",
+      "scopes": [],
+      "owner": "IAM",
+      "tier": 2,
+      "eol": null
+    },
+    "src": {
+      "x": 770,
+      "y": 90,
+      "l": "On-prem Source",
+      "zone": "On-premises",
+      "host": "on-prem SQL / files",
+      "cls": "conf",
+      "scopes": [],
+      "owner": "DataXM",
+      "tier": 2,
+      "eol": null
+    },
+    "centra": {
+      "x": 230,
+      "y": 215,
+      "l": "Commercial Entra (.com)",
+      "zone": "Commercial Plane (.com)",
+      "host": "Microsoft commercial",
+      "cls": "conf",
+      "scopes": [
+        "FRM",
+        "FRH"
+      ],
+      "owner": "IAM",
+      "tier": 1,
+      "eol": null,
+      "children": [
+        {"id":"ce_sync",  "l":"Hybrid Sync",     "type":"service","cls":"conf","addr":"Entra Connect"},
+        {"id":"ce_b2b",   "l":"B2B Collab",      "type":"zone",   "cls":"pub"},
+        {"id":"ce_sspr",  "l":"SSPR",            "type":"service","cls":"conf"},
+        {"id":"ce_mfa",   "l":"MFA / FIDO2",     "type":"service","cls":"conf"}
+      ],
+      "childEdges": [
+        {"a":"ce_sync","b":"ce_mfa","proto":"auth flow"},
+        {"a":"ce_sspr","b":"ce_mfa","proto":"reset→verify"}
+      ]
+    },
+    "gccsp": {
+      "x": 770,
+      "y": 210,
+      "l": "GCC Collab Portal (.com)",
+      "zone": "Commercial Plane (.com)",
+      "host": "on Azure Commercial",
+      "cls": "conf",
+      "scopes": [
+        "FRH"
+      ],
+      "owner": "M365",
+      "tier": 1,
+      "eol": null
+    },
+    "azcom": {
+      "x": 230,
+      "y": 375,
+      "l": "Azure Commercial",
+      "zone": "Commercial Plane (.com)",
+      "host": "Azure Commercial",
+      "cls": "conf",
+      "scopes": [
+        "FRM",
+        "FRH"
+      ],
+      "owner": "Cloud Platform",
+      "tier": 1,
+      "eol": null,
+      "children": [
+        {"id":"ac_vnet",  "l":"Comm VNet",        "type":"vnet",   "cls":"conf","addr":"10.0.0.0/16"},
+        {"id":"ac_sub",   "l":"App Subnet",       "type":"subnet", "cls":"int", "addr":"10.0.10.0/24"},
+        {"id":"ac_pe",    "l":"Private Endpoints","type":"service","cls":"conf"},
+        {"id":"ac_fw",    "l":"Azure Firewall",   "type":"zone",   "cls":"conf"},
+        {"id":"ac_mon",   "l":"Monitor / LA",     "type":"storage","cls":"conf"}
+      ],
+      "childEdges": [
+        {"a":"ac_vnet","b":"ac_sub","proto":"contains"},
+        {"a":"ac_fw","b":"ac_sub","proto":"inspects"},
+        {"a":"ac_pe","b":"ac_sub","proto":"private link"},
+        {"a":"ac_sub","b":"ac_mon","proto":"diag logs"}
+      ]
+    },
+    "adfc": {
+      "x": 470,
+      "y": 375,
+      "l": "ADF \u00b7 Commercial",
+      "zone": "Commercial Plane (.com)",
+      "host": "Azure Commercial",
+      "cls": "conf",
+      "scopes": [
+        "FRH"
+      ],
+      "owner": "DataXM",
+      "tier": 2,
+      "eol": null
+    },
+    "shirc": {
+      "x": 700,
+      "y": 375,
+      "l": "SHIR \u00b7 Commercial",
+      "zone": "Commercial Plane (.com)",
+      "host": "on-prem, reg. to comm.",
+      "cls": "int",
+      "scopes": [
+        "FRH"
+      ],
+      "owner": "DataXM",
+      "tier": 2,
+      "eol": null
+    },
+    "gentra": {
+      "x": 230,
+      "y": 505,
+      "l": "Entra ID Gov (.us)",
+      "zone": "Azure Government Plane (.us)",
+      "host": "Microsoft Gov",
+      "cls": "reg",
+      "scopes": [
+        "FRH",
+        "IL4"
+      ],
+      "owner": "IAM",
+      "tier": 1,
+      "eol": null,
+      "children": [
+        {"id":"gid_users", "l":"Sovereign Users",  "type":"service","cls":"reg"},
+        {"id":"gid_groups","l":"IL4 Groups",       "type":"service","cls":"reg"},
+        {"id":"gid_ca",    "l":"Conditional Access","type":"service","cls":"reg","addr":"FedRAMP High"},
+        {"id":"gid_pim",   "l":"PIM Roles",        "type":"service","cls":"reg","addr":"JIT only"},
+        {"id":"gid_audit", "l":"Audit Logs",       "type":"volume", "cls":"reg","addr":"SIEM export"}
+      ],
+      "childEdges": [
+        {"a":"gid_users","b":"gid_groups","proto":"membership"},
+        {"a":"gid_ca","b":"gid_groups","proto":"policy targets"},
+        {"a":"gid_pim","b":"gid_groups","proto":"elevates"},
+        {"a":"gid_audit","b":"gid_ca","proto":"records"}
+      ]
+    },
+    "gcchsp": {
+      "x": 770,
+      "y": 500,
+      "l": "GCC High Collab Portal (.us)",
+      "zone": "Azure Government Plane (.us)",
+      "host": "on Azure Government",
+      "cls": "reg",
+      "scopes": [
+        "FRH",
+        "IL4"
+      ],
+      "owner": "M365",
+      "tier": 1,
+      "eol": null
+    },
+    "azgov": {
+      "x": 230,
+      "y": 640,
+      "l": "Azure Government",
+      "zone": "Azure Government Plane (.us)",
+      "host": "Azure Government",
+      "cls": "reg",
+      "scopes": [
+        "FRH",
+        "IL4"
+      ],
+      "owner": "Cloud Platform",
+      "tier": 1,
+      "eol": null,
+      "children": [
+        {"id":"agv_vnet",  "l":"Gov VNet",         "type":"vnet",   "cls":"reg", "addr":"10.100.0.0/16"},
+        {"id":"agv_sub",   "l":"Workload Subnet",  "type":"subnet", "cls":"reg", "addr":"10.100.10.0/24"},
+        {"id":"agv_nsg",   "l":"NSG · IL4 rules",  "type":"zone",   "cls":"reg"},
+        {"id":"agv_kv",    "l":"Key Vault Gov",    "type":"volume", "cls":"reg", "addr":"FIPS 140-2 L3"},
+        {"id":"agv_law",   "l":"Log Analytics Gov","type":"storage","cls":"reg", "addr":"90-day retention"}
+      ],
+      "childEdges": [
+        {"a":"agv_vnet","b":"agv_sub","proto":"contains"},
+        {"a":"agv_nsg","b":"agv_sub","proto":"filters"},
+        {"a":"agv_kv","b":"agv_sub","proto":"secrets"},
+        {"a":"agv_sub","b":"agv_law","proto":"diag logs"}
+      ]
+    },
+    "adfg": {
+      "x": 470,
+      "y": 640,
+      "l": "ADF \u00b7 Gov",
+      "zone": "Azure Government Plane (.us)",
+      "host": "Azure Government",
+      "cls": "reg",
+      "scopes": [
+        "FRH",
+        "IL4"
+      ],
+      "owner": "DataXM",
+      "tier": 2,
+      "eol": null
+    },
+    "shirg": {
+      "x": 700,
+      "y": 640,
+      "l": "SHIR \u00b7 Gov",
+      "zone": "Azure Government Plane (.us)",
+      "host": "on-prem, reg. to gov",
+      "cls": "reg",
+      "scopes": [
+        "FRH",
+        "IL4"
+      ],
+      "owner": "DataXM",
+      "tier": 2,
+      "eol": null
+    }
+  },
+  "layers": [
+    {
+      "id": "nerv",
+      "organ": "Trust",
+      "arch": "Identity & Directory",
+      "color": "var(--nervous)",
+      "blend": true,
+      "flow": true,
+      "edges": [
+        {
+          "a": "ad",
+          "b": "connect",
+          "proto": "LDAP",
+          "port": 389,
+          "conn": "lan"
+        },
+        {
+          "a": "connect",
+          "b": "centra",
+          "proto": "Entra Connect sync",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "connect",
+          "b": "gentra",
+          "proto": "Entra Connect sync (separate)",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "centra",
+          "b": "gccsp",
+          "proto": "OIDC",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "centra",
+          "b": "azcom",
+          "proto": "OIDC",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "centra",
+          "b": "adfc",
+          "proto": "OIDC",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "gentra",
+          "b": "gcchsp",
+          "proto": "OIDC",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "gentra",
+          "b": "azgov",
+          "proto": "OIDC",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "gentra",
+          "b": "adfg",
+          "proto": "OIDC",
+          "port": 443,
+          "conn": "internet"
+        }
+      ]
+    },
+    {
+      "id": "skel",
+      "organ": "Backbone",
+      "arch": "Sovereign Hosting",
+      "color": "var(--skeleton)",
+      "blend": true,
+      "flow": false,
+      "edges": [
+        {
+          "a": "gccsp",
+          "b": "azcom",
+          "conn": "lan"
+        },
+        {
+          "a": "adfc",
+          "b": "azcom",
+          "conn": "lan"
+        },
+        {
+          "a": "shirc",
+          "b": "azcom",
+          "conn": "lan"
+        },
+        {
+          "a": "shirc",
+          "b": "adfc",
+          "conn": "lan"
+        },
+        {
+          "a": "gcchsp",
+          "b": "azgov",
+          "conn": "lan"
+        },
+        {
+          "a": "adfg",
+          "b": "azgov",
+          "conn": "lan"
+        },
+        {
+          "a": "shirg",
+          "b": "azgov",
+          "conn": "lan"
+        },
+        {
+          "a": "shirg",
+          "b": "adfg",
+          "conn": "lan"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "organ": "Data Movement",
+      "arch": "Pipelines & Reach",
+      "color": "var(--vascular)",
+      "blend": true,
+      "flow": true,
+      "edges": [
+        {
+          "a": "adfc",
+          "b": "gccsp",
+          "proto": "HTTPS (native)",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "adfg",
+          "b": "gcchsp",
+          "proto": "HTTPS (native)",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "adfc",
+          "b": "gcchsp",
+          "proto": "HTTPS (NOT native - needs bridge)",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "shirc",
+          "b": "src",
+          "proto": "TDS",
+          "port": 1433,
+          "conn": "lan"
+        },
+        {
+          "a": "shirg",
+          "b": "src",
+          "proto": "TDS",
+          "port": 1433,
+          "conn": "lan"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "s1",
+      "name": "Clean Gov pipeline (ADF \u2192 GCC High)",
+      "steps": [
+        "adfg",
+        "gcchsp"
+      ],
+      "note": "In-boundary on .us, native and supported."
+    },
+    {
+      "id": "s2",
+      "name": "Forbidden cross-cloud (Commercial ADF \u2192 GCC High)",
+      "steps": [
+        "adfc",
+        "gcchsp"
+      ],
+      "note": "Crosses .com to .us. Not native, needs a bridge."
+    },
+    {
+      "id": "s3",
+      "name": "Hybrid identity sync (GCC path)",
+      "steps": [
+        "ad",
+        "connect",
+        "centra"
+      ],
+      "note": "On-prem AD into commercial Entra, which owns GCC."
+    }
+  ]
+}

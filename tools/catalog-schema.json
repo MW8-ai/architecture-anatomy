@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://architecture-anatomy/catalog-schema.json",
+  "title": "Architecture Anatomy Catalog",
+  "description": "Schema for Architecture Anatomy JSON catalog files.",
+  "type": "object",
+  "required": ["meta", "zones", "nodes", "layers"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title":          { "type": "string" },
+        "system":         { "type": "string" },
+        "version":        { "type": "string" },
+        "author":         { "type": "string" },
+        "updated":        { "type": "string", "format": "date" },
+        "classification": { "type": "string" },
+        "classColor":     { "type": "string", "pattern": "^#[0-9a-fA-F]{3,6}$" },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "t", "c"],
+            "properties": {
+              "id": { "type": "string" },
+              "t":  { "type": "string" },
+              "c":  { "type": "string" }
+            }
+          }
+        },
+        "revisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "v":    { "type": "string" },
+              "date": { "type": "string" },
+              "who":  { "type": "string" },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "zones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["t", "y0", "y1"],
+        "properties": {
+          "t":  { "type": "string" },
+          "y0": { "type": "number" },
+          "y1": { "type": "number" }
+        }
+      }
+    },
+    "nodes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["x", "y", "l", "zone", "cls", "tier"],
+        "properties": {
+          "x":      { "type": "number" },
+          "y":      { "type": "number" },
+          "l":      { "type": "string" },
+          "zone":   { "type": "string" },
+          "host":   { "type": "string" },
+          "cls":    { "type": "string", "enum": ["pub", "int", "conf", "reg"] },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "owner":  { "type": "string" },
+          "tier":   { "type": "integer", "enum": [1, 2, 3] },
+          "eol":    { "type": ["string", "null"] },
+          "icon":   { "type": "string", "enum": ["cloud","db","storage","server","identity","users","network","generic"] }
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "organ", "arch", "color", "edges"],
+        "properties": {
+          "id":     { "type": "string" },
+          "organ":  { "type": "string" },
+          "arch":   { "type": "string" },
+          "color":  { "type": "string" },
+          "blend":  { "type": "boolean" },
+          "flow":   { "type": "boolean" },
+          "hub":    { "type": "string" },
+          "edges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["a", "b"],
+              "properties": {
+                "a":     { "type": "string" },
+                "b":     { "type": "string" },
+                "proto": { "type": "string" },
+                "port":  { "type": ["number", "string"] },
+                "dir":   { "type": "string", "enum": ["->", "<-", "<->"] },
+                "conn":  { "type": "string", "enum": ["internet","er","dx","vpn","lan","repl"] },
+                "rpo":   { "type": "string", "description": "Recovery Point Objective, e.g. '15min'" },
+                "rto":   { "type": "string", "description": "Recovery Time Objective, e.g. '2hr'" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "steps"],
+        "properties": {
+          "id":    { "type": "string" },
+          "name":  { "type": "string" },
+          "steps": { "type": "array", "items": { "type": "string" }, "minItems": 2 },
+          "note":  { "type": "string" }
+        }
+      }
+    }
+  }
+}

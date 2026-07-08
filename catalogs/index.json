@@ -1,0 +1,29 @@
+{
+  "catalogs": [
+    {
+      "file": "sovereign-boundary.json",
+      "title": "Sovereign Cloud Boundary",
+      "description": "Commercial \u00b7 GCC \u00b7 GCC High reference. Models the .com vs .us sovereignty split and the non-native ADF \u2192 GCC High hop."
+    },
+    {
+      "file": "zero-trust-access.json",
+      "title": "Zero-Trust Network Access",
+      "description": "Identity-centric perimeter with ZTNA proxy, Conditional Access, phish-resistant MFA, and PAM vault. No implicit trust by network position. SPOFs overlay tells the story."
+    },
+    {
+      "file": "saas-platform.json",
+      "title": "Cloud-Native SaaS Platform",
+      "description": "Multi-tenant SaaS reference \u2014 CDN, API gateway fan-out, async workers, Postgres primary/replica with 1-min RPO streaming repl, geo failover."
+    },
+    {
+      "file": "ot-it-convergence.json",
+      "title": "OT/IT Industrial Convergence",
+      "description": "Manufacturing / critical infrastructure. Hardware data diode enforces one-way OT\u2192IT flow. PLC \u2192 edge \u2192 DMZ \u2192 historian \u2192 analytics. SPOFs overlay lights up the data diode."
+    },
+    {
+      "file": "examples/sovereign-sample.json",
+      "title": "Sovereign Sample (validation demo)",
+      "description": "Phase A rules demo: unmet requirement, boundary violation, blast radius. Deliberately trips the validator."
+    }
+  ]
+}

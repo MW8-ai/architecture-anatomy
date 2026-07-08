@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "title": "OT/IT Industrial Convergence",
+    "system": "Manufacturing / Critical Infrastructure Reference",
+    "version": "1.0",
+    "author": "Architecture",
+    "updated": "2026-06-23",
+    "classification": "",
+    "revisions": [
+      {
+        "v": "1.0",
+        "date": "2026-06-23",
+        "who": "Architecture",
+        "note": "Initial baseline. Unidirectional gateway enforces one-way OT→IT data flow; no path from IT back to field."
+      }
+    ]
+  },
+  "zones": [
+    { "t": "OT Field · Plant Floor", "y0": 18,  "y1": 128 },
+    { "t": "Edge Processing",        "y0": 128, "y1": 248 },
+    { "t": "OT/IT DMZ",              "y0": 248, "y1": 368 },
+    { "t": "IT Data Intake",         "y0": 368, "y1": 480 },
+    { "t": "Enterprise Analytics",   "y0": 480, "y1": 592 },
+    { "t": "Resilience & SOC",       "y0": 592, "y1": 702 }
+  ],
+  "nodes": {
+    "plc_a": {
+      "x": 145, "y": 70,
+      "l": "PLCs · Zone A",
+      "zone": "OT Field · Plant Floor",
+      "host": "Allen-Bradley / Siemens",
+      "cls": "pub", "tier": 1, "eol": null, "icon": "server"
+    },
+    "hmi": {
+      "x": 380, "y": 70,
+      "l": "SCADA HMI",
+      "zone": "OT Field · Plant Floor",
+      "host": "ruggedized workstation",
+      "cls": "conf", "tier": 1, "eol": null, "icon": "generic"
+    },
+    "plc_b": {
+      "x": 630, "y": 70,
+      "l": "PLCs · Zone B",
+      "zone": "OT Field · Plant Floor",
+      "host": "Allen-Bradley / Siemens",
+      "cls": "pub", "tier": 1, "eol": null, "icon": "server"
+    },
+    "sensors": {
+      "x": 880, "y": 70,
+      "l": "Sensors & RTUs",
+      "zone": "OT Field · Plant Floor",
+      "host": "field hardware",
+      "cls": "pub", "tier": 2, "eol": null, "icon": "network"
+    },
+    "edge_gw": {
+      "x": 230, "y": 188,
+      "l": "Edge Gateway",
+      "zone": "Edge Processing",
+      "host": "industrial PC",
+      "cls": "int", "tier": 1, "eol": null, "icon": "server"
+    },
+    "proto_conv": {
+      "x": 530, "y": 188,
+      "l": "Protocol Converter",
+      "zone": "Edge Processing",
+      "host": "embedded Linux",
+      "cls": "int", "tier": 2, "eol": null, "icon": "network"
+    },
+    "edge_ts": {
+      "x": 820, "y": 188,
+      "l": "Edge Time-Series",
+      "zone": "Edge Processing",
+      "host": "industrial PC",
+      "cls": "int", "tier": 2, "eol": null, "icon": "db"
+    },
+    "data_diode": {
+      "x": 190, "y": 307,
+      "l": "Unidirectional GW",
+      "zone": "OT/IT DMZ",
+      "host": "hardware data diode",
+      "cls": "int", "tier": 1, "eol": null, "icon": "network",
+      "children": [
+        {"id":"dd_rx",  "l":"RX (OT side)", "type":"zone","cls":"int",  "addr":"receive-only"},
+        {"id":"dd_tx",  "l":"TX (IT side)", "type":"zone","cls":"conf", "addr":"transmit-only"},
+        {"id":"dd_buf", "l":"Optical Buffer","type":"service","cls":"int","addr":"fiber link"},
+        {"id":"dd_fmt", "l":"Protocol Strip","type":"service","cls":"int","addr":"UDP-only out"}
+      ],
+      "childEdges": [
+        {"a":"dd_rx","b":"dd_buf","proto":"fiber in"},
+        {"a":"dd_buf","b":"dd_tx","proto":"one-way"},
+        {"a":"dd_buf","b":"dd_fmt","proto":"strip TCP"}
+      ]
+    },
+    "ot_fw": {
+      "x": 500, "y": 307,
+      "l": "OT/IT Firewall",
+      "zone": "OT/IT DMZ",
+      "host": "Purdue L3.5 appliance",
+      "cls": "conf", "tier": 1, "eol": null, "icon": "network"
+    },
+    "demil": {
+      "x": 800, "y": 307,
+      "l": "Demil Historian",
+      "zone": "OT/IT DMZ",
+      "host": "isolated VM",
+      "cls": "conf", "tier": 1, "eol": null, "icon": "db"
+    },
+    "historian": {
+      "x": 280, "y": 424,
+      "l": "Primary Historian",
+      "zone": "IT Data Intake",
+      "host": "on-prem server",
+      "cls": "conf", "tier": 1, "eol": null, "icon": "db",
+      "children": [
+        {"id":"hst_ts",   "l":"Time-Series DB",  "type":"volume","cls":"conf","addr":"OSIsoft PI"},
+        {"id":"hst_tag",  "l":"Tag Dictionary",  "type":"service","cls":"conf","addr":"~50K tags"},
+        {"id":"hst_rep",  "l":"Replication",     "type":"service","cls":"conf","addr":"async"},
+        {"id":"hst_api",  "l":"REST API",         "type":"service","cls":"int", "addr":":8080"}
+      ],
+      "childEdges": [
+        {"a":"hst_ts","b":"hst_rep","proto":"replicate"},
+        {"a":"hst_tag","b":"hst_ts","proto":"index"},
+        {"a":"hst_ts","b":"hst_api","proto":"query"}
+      ]
+    },
+    "mqtt": {
+      "x": 560, "y": 424,
+      "l": "MQTT Broker",
+      "zone": "IT Data Intake",
+      "host": "on-prem / cloud",
+      "cls": "int", "tier": 1, "eol": null, "icon": "network"
+    },
+    "data_lake": {
+      "x": 840, "y": 424,
+      "l": "Data Lake",
+      "zone": "IT Data Intake",
+      "host": "cloud object store",
+      "cls": "reg", "tier": 1, "eol": null, "icon": "storage"
+    },
+    "stream": {
+      "x": 250, "y": 536,
+      "l": "Stream Processor",
+      "zone": "Enterprise Analytics",
+      "host": "Kafka + Flink",
+      "cls": "int", "tier": 2, "eol": null, "icon": "server"
+    },
+    "ml_pipe": {
+      "x": 530, "y": 536,
+      "l": "ML Pipeline",
+      "zone": "Enterprise Analytics",
+      "host": "GPU cluster",
+      "cls": "conf", "tier": 2, "eol": null, "icon": "server"
+    },
+    "dashboard": {
+      "x": 820, "y": 536,
+      "l": "Ops Dashboard",
+      "zone": "Enterprise Analytics",
+      "host": "web app",
+      "cls": "int", "tier": 2, "eol": null, "icon": "generic"
+    },
+    "ot_soc": {
+      "x": 280, "y": 645,
+      "l": "OT/IT SOC",
+      "zone": "Resilience & SOC",
+      "host": "analyst workstations",
+      "cls": "conf", "tier": 1, "eol": null, "icon": "users"
+    },
+    "immut_bak": {
+      "x": 700, "y": 645,
+      "l": "Immutable OT Backup",
+      "zone": "Resilience & SOC",
+      "host": "air-gap tape / WORM",
+      "cls": "reg", "tier": 1, "eol": null, "icon": "storage"
+    }
+  },
+  "layers": [
+    {
+      "id": "skel",
+      "organ": "Osseous",
+      "arch": "Field & Compute",
+      "color": "var(--skeleton)",
+      "blend": true,
+      "flow": false,
+      "edges": [
+        { "a": "plc_a",     "b": "edge_gw",    "conn": "lan" },
+        { "a": "plc_b",     "b": "edge_gw",    "conn": "lan" },
+        { "a": "hmi",       "b": "plc_a",      "conn": "lan" },
+        { "a": "hmi",       "b": "plc_b",      "conn": "lan" },
+        { "a": "sensors",   "b": "proto_conv",  "conn": "lan" },
+        { "a": "proto_conv","b": "edge_gw",     "conn": "lan" },
+        { "a": "edge_gw",   "b": "edge_ts",     "conn": "lan" }
+      ]
+    },
+    {
+      "id": "vasc",
+      "organ": "Vascular",
+      "arch": "Network & Data Flow",
+      "color": "var(--vascular)",
+      "blend": true,
+      "flow": true,
+      "edges": [
+        { "a": "edge_gw",   "b": "data_diode",  "proto": "Modbus/MQTT",  "conn": "lan"  },
+        { "a": "proto_conv","b": "ot_fw",        "proto": "DNP3→MQTT",   "conn": "lan"  },
+        { "a": "data_diode","b": "demil",        "proto": "UDP one-way",  "conn": "lan"  },
+        { "a": "ot_fw",     "b": "demil",        "proto": "filtered TCP", "conn": "lan"  },
+        { "a": "demil",     "b": "historian",    "proto": "OPC-UA",  "port": 4840, "conn": "lan" },
+        { "a": "demil",     "b": "mqtt",         "proto": "MQTT",    "port": 1883, "conn": "lan" },
+        { "a": "historian", "b": "data_lake",    "proto": "HTTPS",   "port": 443,  "conn": "lan" },
+        { "a": "mqtt",      "b": "stream",       "proto": "Kafka",   "port": 9092, "conn": "lan" },
+        { "a": "stream",    "b": "ml_pipe",      "proto": "gRPC",    "port": 8080, "conn": "lan" },
+        { "a": "stream",    "b": "dashboard",    "proto": "WebSocket","port": 443, "conn": "lan" },
+        { "a": "ml_pipe",   "b": "dashboard",    "proto": "HTTPS",   "port": 443,  "conn": "lan" }
+      ]
+    },
+    {
+      "id": "nerv",
+      "organ": "Nervous",
+      "arch": "Control & Monitoring",
+      "color": "var(--nervous)",
+      "blend": true,
+      "flow": true,
+      "edges": [
+        { "a": "ot_soc",    "b": "ot_fw",       "proto": "SSH",    "port": 22,   "conn": "lan"      },
+        { "a": "ot_soc",    "b": "historian",   "proto": "HTTPS",  "port": 443,  "conn": "lan"      },
+        { "a": "ot_soc",    "b": "dashboard",   "proto": "HTTPS",  "port": 443,  "conn": "lan"      },
+        { "a": "ot_soc",    "b": "ml_pipe",     "proto": "HTTPS",  "port": 443,  "conn": "lan"      }
+      ]
+    },
+    {
+      "id": "data",
+      "organ": "Visceral",
+      "arch": "Resilience & Archive",
+      "color": "var(--lymph)",
+      "blend": true,
+      "flow": false,
+      "edges": [
+        { "a": "historian", "b": "immut_bak", "proto": "archive",  "conn": "repl", "rpo": "15min", "rto": "2hr"  },
+        { "a": "data_lake", "b": "immut_bak", "proto": "snapshot", "conn": "repl", "rpo": "1hr",   "rto": "8hr"  },
+        { "a": "edge_ts",   "b": "historian", "proto": "batch sync","conn": "repl", "rpo": "5min",  "rto": "30min"}
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f1",
+      "name": "Sensor data → Dashboard",
+      "steps": ["sensors", "proto_conv", "edge_gw", "data_diode", "demil", "historian", "data_lake", "stream", "dashboard"],
+      "note": "Full north-bound telemetry path. Data diode guarantees no return channel into OT — even a compromised IT system cannot reach field devices."
+    },
+    {
+      "id": "f2",
+      "name": "Alert → SOC triage",
+      "steps": ["mqtt", "stream", "ot_soc"],
+      "note": "Anomaly detected in stream processor; alert published to SOC. SOC can view historian and adjust firewall rules but cannot write to OT field."
+    },
+    {
+      "id": "f3",
+      "name": "ML predictive maintenance",
+      "steps": ["historian", "data_lake", "stream", "ml_pipe", "dashboard"],
+      "note": "Historical + live data trained against failure signatures. Model outputs anomaly scores surfaced on ops dashboard for maintenance scheduling."
+    }
+  ]
+}

@@ -1,0 +1,286 @@
+{
+  "meta": {
+    "title": "Cloud-Native SaaS Platform",
+    "system": "Multi-Tenant SaaS Reference",
+    "version": "1.0",
+    "author": "Architecture",
+    "updated": "2026-06-23",
+    "classification": "",
+    "revisions": [
+      {
+        "v": "1.0",
+        "date": "2026-06-23",
+        "who": "Architecture",
+        "note": "Initial baseline. API-gateway fan-out, async workers, Postgres primary/replica, geo backup."
+      }
+    ]
+  },
+  "zones": [
+    { "t": "Public Edge",         "y0": 18,  "y1": 108 },
+    { "t": "Gateway Layer",       "y0": 108, "y1": 220 },
+    { "t": "Application Services","y0": 220, "y1": 400 },
+    { "t": "Data Services",       "y0": 400, "y1": 530 },
+    { "t": "Platform & Ops",      "y0": 530, "y1": 635 },
+    { "t": "Resilience",          "y0": 635, "y1": 702 }
+  ],
+  "nodes": {
+    "web_usr": {
+      "x": 180, "y": 62,
+      "l": "Browser Users",
+      "zone": "Public Edge",
+      "host": "—", "cls": "pub", "tier": 3, "eol": null, "icon": "users"
+    },
+    "mob_app": {
+      "x": 440, "y": 62,
+      "l": "Mobile App Clients",
+      "zone": "Public Edge",
+      "host": "—", "cls": "pub", "tier": 3, "eol": null, "icon": "users"
+    },
+    "api_int": {
+      "x": 730, "y": 62,
+      "l": "API Integrations",
+      "zone": "Public Edge",
+      "host": "partner / webhook",
+      "cls": "int", "tier": 2, "eol": null, "icon": "network"
+    },
+    "cdn": {
+      "x": 180, "y": 162,
+      "l": "Global CDN",
+      "zone": "Gateway Layer",
+      "host": "edge PoP",
+      "cls": "pub", "tier": 2, "eol": null, "icon": "cloud"
+    },
+    "lb": {
+      "x": 440, "y": 162,
+      "l": "L7 Load Balancer",
+      "zone": "Gateway Layer",
+      "host": "cloud-managed",
+      "cls": "int", "tier": 1, "eol": null, "icon": "network"
+    },
+    "apigw": {
+      "x": 730, "y": 162,
+      "l": "API Gateway",
+      "zone": "Gateway Layer",
+      "host": "managed gateway",
+      "cls": "int", "tier": 1, "eol": null, "icon": "network",
+      "children": [
+        {"id":"gw_rt",   "l":"Route Table",    "type":"service","cls":"int"},
+        {"id":"gw_auth", "l":"JWT Validator",  "type":"service","cls":"conf"},
+        {"id":"gw_rl",   "l":"Rate Limiter",   "type":"service","cls":"int", "addr":"10K rps"},
+        {"id":"gw_cache","l":"Response Cache", "type":"volume", "cls":"int", "addr":"Redis 6GB"},
+        {"id":"gw_log",  "l":"Access Logs",    "type":"storage","cls":"conf","addr":"S3 / SIEM"}
+      ],
+      "childEdges": [
+        {"a":"gw_auth","b":"gw_rt","proto":"authz→route"},
+        {"a":"gw_rl","b":"gw_rt","proto":"throttle"},
+        {"a":"gw_rt","b":"gw_cache","proto":"cache-hit"},
+        {"a":"gw_rt","b":"gw_log","proto":"log"}
+      ]
+    },
+    "auth_svc": {
+      "x": 140, "y": 308,
+      "l": "Auth Service",
+      "zone": "Application Services",
+      "host": "container",
+      "cls": "conf", "tier": 1, "eol": null, "icon": "identity"
+    },
+    "tenant_rt": {
+      "x": 380, "y": 308,
+      "l": "Tenant Router",
+      "zone": "Application Services",
+      "host": "container",
+      "cls": "int", "tier": 1, "eol": null, "icon": "network"
+    },
+    "app_a": {
+      "x": 610, "y": 308,
+      "l": "App Service A",
+      "zone": "Application Services",
+      "host": "container cluster",
+      "cls": "conf", "tier": 2, "eol": null, "icon": "server"
+    },
+    "app_b": {
+      "x": 840, "y": 308,
+      "l": "App Service B",
+      "zone": "Application Services",
+      "host": "container cluster",
+      "cls": "conf", "tier": 2, "eol": null, "icon": "server"
+    },
+    "worker": {
+      "x": 500, "y": 390,
+      "l": "Async Worker Pool",
+      "zone": "Application Services",
+      "host": "container",
+      "cls": "int", "tier": 2, "eol": null, "icon": "server"
+    },
+    "mq": {
+      "x": 190, "y": 463,
+      "l": "Message Queue",
+      "zone": "Data Services",
+      "host": "managed AMQP",
+      "cls": "int", "tier": 1, "eol": null, "icon": "network"
+    },
+    "pg_pri": {
+      "x": 440, "y": 463,
+      "l": "Postgres Primary",
+      "zone": "Data Services",
+      "host": "managed RDS",
+      "cls": "reg", "tier": 1, "eol": null, "icon": "db",
+      "children": [
+        {"id":"pg_wal",  "l":"WAL Archiver",   "type":"service","cls":"reg", "addr":"S3 WAL"},
+        {"id":"pg_vac",  "l":"Autovacuum",     "type":"service","cls":"int"},
+        {"id":"pg_ext",  "l":"Extensions",     "type":"service","cls":"int", "addr":"pgcrypto, uuid-ossp"},
+        {"id":"pg_bak",  "l":"Snapshot Backup","type":"volume", "cls":"reg", "addr":"daily · 35-day"},
+        {"id":"pg_conn", "l":"PgBouncer Pool", "type":"service","cls":"int", "addr":"max 500 conn"}
+      ],
+      "childEdges": [
+        {"a":"pg_wal","b":"pg_bak","proto":"archive"},
+        {"a":"pg_conn","b":"pg_ext","proto":"routes"},
+        {"a":"pg_vac","b":"pg_ext","proto":"cleans"}
+      ]
+    },
+    "pg_rep": {
+      "x": 660, "y": 463,
+      "l": "Read Replica",
+      "zone": "Data Services",
+      "host": "managed RDS",
+      "cls": "reg", "tier": 1, "eol": null, "icon": "db"
+    },
+    "s3": {
+      "x": 880, "y": 463,
+      "l": "Object Storage",
+      "zone": "Data Services",
+      "host": "cloud object store",
+      "cls": "int", "tier": 2, "eol": null, "icon": "storage"
+    },
+    "obs": {
+      "x": 230, "y": 582,
+      "l": "Observability Stack",
+      "zone": "Platform & Ops",
+      "host": "managed metrics/logs",
+      "cls": "conf", "tier": 2, "eol": null, "icon": "storage"
+    },
+    "email_gw": {
+      "x": 520, "y": 582,
+      "l": "Transactional Email",
+      "zone": "Platform & Ops",
+      "host": "email SaaS",
+      "cls": "pub", "tier": 3, "eol": null, "icon": "generic"
+    },
+    "secrets": {
+      "x": 810, "y": 582,
+      "l": "Secrets Manager",
+      "zone": "Platform & Ops",
+      "host": "cloud KMS / vault",
+      "cls": "reg", "tier": 1, "eol": null, "icon": "identity"
+    },
+    "geo_rep": {
+      "x": 350, "y": 668,
+      "l": "Cross-Region Replica",
+      "zone": "Resilience",
+      "host": "alt region",
+      "cls": "reg", "tier": 1, "eol": null, "icon": "db"
+    },
+    "bak_store": {
+      "x": 660, "y": 668,
+      "l": "Backup Store",
+      "zone": "Resilience",
+      "host": "cold object store",
+      "cls": "reg", "tier": 2, "eol": null, "icon": "storage"
+    }
+  },
+  "layers": [
+    {
+      "id": "skel",
+      "organ": "Osseous",
+      "arch": "Hosting & Compute",
+      "color": "var(--skeleton)",
+      "blend": true,
+      "flow": false,
+      "edges": [
+        { "a": "cdn",      "b": "lb",        "conn": "lan"  },
+        { "a": "lb",       "b": "apigw",     "conn": "lan"  },
+        { "a": "apigw",    "b": "auth_svc",  "conn": "lan"  },
+        { "a": "apigw",    "b": "tenant_rt", "conn": "lan"  },
+        { "a": "tenant_rt","b": "app_a",     "conn": "lan"  },
+        { "a": "tenant_rt","b": "app_b",     "conn": "lan"  },
+        { "a": "tenant_rt","b": "worker",    "conn": "lan"  },
+        { "a": "worker",   "b": "mq",        "conn": "lan"  },
+        { "a": "mq",       "b": "app_b",     "conn": "lan"  }
+      ]
+    },
+    {
+      "id": "vasc",
+      "organ": "Vascular",
+      "arch": "Network & Traffic",
+      "color": "var(--vascular)",
+      "blend": true,
+      "flow": true,
+      "edges": [
+        { "a": "web_usr",  "b": "cdn",      "proto": "HTTPS",  "port": 443,  "conn": "internet" },
+        { "a": "mob_app",  "b": "lb",       "proto": "HTTPS",  "port": 443,  "conn": "internet" },
+        { "a": "api_int",  "b": "apigw",    "proto": "HTTPS",  "port": 443,  "conn": "internet" },
+        { "a": "app_a",    "b": "pg_pri",   "proto": "pgsql",  "port": 5432, "conn": "lan"      },
+        { "a": "app_b",    "b": "pg_pri",   "proto": "pgsql",  "port": 5432, "conn": "lan"      },
+        { "a": "worker",   "b": "pg_pri",   "proto": "pgsql",  "port": 5432, "conn": "lan"      },
+        { "a": "app_a",    "b": "pg_rep",   "proto": "pgsql",  "port": 5432, "conn": "lan"      },
+        { "a": "app_a",    "b": "s3",       "proto": "HTTPS",  "port": 443,  "conn": "lan"      },
+        { "a": "worker",   "b": "s3",       "proto": "HTTPS",  "port": 443,  "conn": "lan"      },
+        { "a": "app_a",    "b": "email_gw", "proto": "HTTPS",  "port": 443,  "conn": "internet" },
+        { "a": "obs",      "b": "app_a",    "proto": "scrape", "port": 9090, "conn": "lan"      },
+        { "a": "obs",      "b": "app_b",    "proto": "scrape", "port": 9090, "conn": "lan"      },
+        { "a": "obs",      "b": "pg_pri",   "proto": "scrape", "port": 9090, "conn": "lan"      }
+      ]
+    },
+    {
+      "id": "nerv",
+      "organ": "Nervous",
+      "arch": "Identity & Secrets",
+      "color": "var(--nervous)",
+      "blend": true,
+      "flow": true,
+      "hub": "auth_svc",
+      "edges": [
+        { "a": "auth_svc", "b": "secrets",   "proto": "mTLS",  "port": 443, "conn": "lan"      },
+        { "a": "auth_svc", "b": "app_a",     "proto": "JWT",   "port": 443, "conn": "lan"      },
+        { "a": "auth_svc", "b": "app_b",     "proto": "JWT",   "port": 443, "conn": "lan"      },
+        { "a": "secrets",  "b": "app_a",     "proto": "mTLS",  "port": 443, "conn": "lan"      },
+        { "a": "secrets",  "b": "worker",    "proto": "mTLS",  "port": 443, "conn": "lan"      },
+        { "a": "secrets",  "b": "pg_pri",    "proto": "mTLS",  "port": 443, "conn": "lan"      }
+      ]
+    },
+    {
+      "id": "data",
+      "organ": "Visceral",
+      "arch": "Data & Resilience",
+      "color": "var(--lymph)",
+      "blend": true,
+      "flow": false,
+      "edges": [
+        { "a": "pg_pri",  "b": "pg_rep",   "proto": "streaming repl", "conn": "repl", "rpo": "1min",  "rto": "2min"  },
+        { "a": "pg_pri",  "b": "geo_rep",  "proto": "logical repl",   "conn": "repl", "rpo": "5min",  "rto": "30min" },
+        { "a": "pg_pri",  "b": "bak_store","proto": "WAL archive",    "conn": "repl", "rpo": "1hr",   "rto": "4hr"   },
+        { "a": "s3",      "b": "geo_rep",  "proto": "CRR",            "conn": "repl", "rpo": "15min", "rto": "1hr"   }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f1",
+      "name": "Browser request → App",
+      "steps": ["web_usr", "cdn", "lb", "apigw", "auth_svc", "tenant_rt", "app_a", "pg_pri"],
+      "note": "Full north-south ingress: CDN terminates TLS, LB distributes, gateway authenticates JWT, tenant router shards by org_id, app writes to primary."
+    },
+    {
+      "id": "f2",
+      "name": "Async job pipeline",
+      "steps": ["app_a", "worker", "mq", "app_b", "pg_pri"],
+      "note": "App A enqueues work; worker dequeues and dispatches to App B; App B persists result. Decoupled so App A and App B scale independently."
+    },
+    {
+      "id": "f3",
+      "name": "Failover: primary → geo replica",
+      "steps": ["pg_pri", "geo_rep"],
+      "note": "5-minute RPO logical replication. On primary failure, promote geo_rep; update DNS; point app pools. RTO target 30 minutes."
+    }
+  ]
+}

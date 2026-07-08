@@ -1,0 +1,39 @@
+{
+ "meta": {
+  "title": "Sovereign Sample — validation demo",
+  "version": "0.1.0",
+  "updated": "2026-07-07",
+  "note": "Exercises all three Phase A rules: unmet requirement (S3 case), blast radius (jump box), boundary violation (GCC-High data through commercial hop).",
+  "ignoredFindings": []
+ },
+ "zones": [
+  {"t": "Commercial", "y0": 10, "y1": 100},
+  {"t": "GCC High", "y0": 110, "y1": 220}
+ ],
+ "nodes": {
+  "app1":   {"t": "Case Mgmt App", "x": 120, "y": 150, "boundary": "gcc-high",
+             "requires": ["storage:object"], "dependsOn": ["jump1", "sql1"],
+             "compliance": {"fedramp": "high", "dataClass": "cji"}},
+  "sql1":   {"t": "SQL (Gov)", "x": 240, "y": 170, "boundary": "gcc-high",
+             "provides": ["db:sql"], "dependsOn": ["jump1"]},
+  "jump1":  {"t": "Jump Box", "x": 180, "y": 200, "boundary": "gcc-high",
+             "provides": ["admin:access"]},
+  "relay1": {"t": "Integration Relay", "x": 160, "y": 60, "boundary": "commercial",
+             "provides": ["queue:events"]},
+  "blob1":  {"t": "Blob (Gov)", "x": 320, "y": 150, "boundary": "gcc-high",
+             "provides": ["storage:blob"],
+             "internals": [{"type": "container", "count": 3}]}
+ },
+ "layers": [
+  {"id": "net", "organ": "Vascular", "arch": "Network", "color": "#7aa2f7", "edges": [
+    {"a": "app1", "b": "sql1", "proto": "TDS", "port": 1433, "conn": "lan"},
+    {"a": "app1", "b": "relay1", "proto": "AMQP", "port": 5671, "conn": "internet"},
+    {"a": "jump1", "b": "sql1", "proto": "SSH", "port": 22, "conn": "lan"}
+  ]}
+ ],
+ "flows": [
+  {"id": "f-bad", "name": "CJI event fan-out", "steps": ["app1", "relay1"],
+   "note": "DELIBERATE VIOLATION: gcc-high data through a commercial relay."},
+  {"id": "f-good", "name": "App to SQL", "steps": ["app1", "sql1"]}
+ ]
+}

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Architecture Anatomy — 3D Prototype (Phase B)</title>
+<style>
+:root{
+  --ink:#070b14; --paper:#dfe8f2; --muted:#7a8aa0; --line:#22304a;
+  --cyan:#5ec8e5; --green:#69d18c; --amber:#e0a94e; --red:#ff4d5e; --violet:#9d8cff;
+  --mono:"Cascadia Code","JetBrains Mono","Fira Code",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--ink);color:var(--paper);font-family:var(--mono);overflow:hidden}
+#stage{position:fixed;inset:0}
+.panel{position:fixed;background:rgba(9,14,24,.82);border:1px solid var(--line);backdrop-filter:blur(6px);font-size:11px;line-height:1.55}
+/* Title block — engineering drawing sheet corner */
+#titleblock{top:14px;left:14px;padding:10px 14px;min-width:250px}
+#titleblock .sheet{display:flex;justify-content:space-between;gap:18px;color:var(--muted);font-size:9.5px;letter-spacing:.08em;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:6px}
+#titleblock h1{font-size:12.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+#titleblock h1 b{color:var(--cyan);font-weight:600}
+#cattitle{color:var(--muted);font-size:10px;margin-top:3px}
+#sum{margin-top:7px;display:flex;gap:12px;font-size:10px}
+#sum .e{color:var(--red)} #sum .w{color:var(--amber)} #sum .i{color:var(--muted)}
+/* Controls */
+#controls{left:14px;bottom:14px;padding:10px 14px;width:250px}
+#controls label{display:block;color:var(--muted);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+#sep{width:100%;accent-color:var(--cyan)}
+#layerlist{margin-top:9px;border-top:1px solid var(--line);padding-top:8px}
+#layerlist .lyr{display:flex;align-items:center;gap:7px;cursor:pointer;padding:2px 0;color:var(--paper)}
+#layerlist .sw{width:9px;height:9px;border:1px solid var(--line)}
+#layerlist .off{opacity:.35}
+#cats{margin-top:9px;border-top:1px solid var(--line);padding-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+button{font-family:var(--mono);font-size:10px;background:transparent;color:var(--paper);border:1px solid var(--line);padding:4px 9px;cursor:pointer;letter-spacing:.05em}
+button:hover{border-color:var(--cyan);color:var(--cyan)}
+button.on{border-color:var(--cyan);color:var(--cyan)}
+button:focus-visible{outline:1px solid var(--cyan);outline-offset:2px}
+/* Hints */
+#hints{top:14px;right:14px;padding:8px 12px;color:var(--muted);font-size:9.5px;letter-spacing:.05em;text-align:right}
+#hints b{color:var(--paper);font-weight:600}
+/* Inspector */
+#inspect{right:14px;top:96px;bottom:14px;width:290px;padding:12px 14px;overflow:auto;display:none}
+#inspect h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:2px}
+#inspect .tag{display:inline-block;border:1px solid var(--line);color:var(--muted);font-size:9px;padding:1px 6px;margin:2px 3px 8px 0;letter-spacing:.08em}
+#inspect h3{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:11px 0 4px;border-top:1px solid var(--line);padding-top:9px}
+#inspect ul{list-style:none}
+#inspect li{padding:2px 0;color:var(--paper)}
+#inspect li.err{color:var(--red)} #inspect li.warn{color:var(--amber)} #inspect li.ign{color:var(--amber);opacity:.7}
+#inspect .close{position:absolute;top:8px;right:10px;border:none;color:var(--muted);font-size:13px}
+#flows{margin-top:2px}
+#flows button{display:block;width:100%;text-align:left;margin-bottom:5px}
+#flows button.bad{border-color:var(--red);color:var(--red)}
+#drop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,11,20,.85);color:var(--cyan);font-size:14px;letter-spacing:.2em;border:2px dashed var(--cyan);z-index:9}
+@media (max-width:760px){#inspect{width:auto;left:14px;top:auto;max-height:44%}}
+@media (prefers-reduced-motion:reduce){/* handled in JS via RM flag */}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div class="panel" id="titleblock">
+  <div class="sheet"><span>ARCHITECTURE ANATOMY</span><span>SHEET 3D-01 · REV B</span></div>
+  <h1>EXPLODED <b>NETWORK</b> VIEW</h1>
+  <div id="cattitle"></div>
+  <div id="sum"></div>
+</div>
+
+<div class="panel" id="controls">
+  <label for="sep">Plane separation</label>
+  <input id="sep" type="range" min="0" max="100" value="0">
+  <div id="layerlist"></div>
+  <div id="cats"></div>
+</div>
+
+<div class="panel" id="hints">
+  <b>drag</b> orbit · <b>wheel</b> zoom · <b>shift-drag</b> pan<br>
+  <b>space</b> explode/fold · <b>↑↓</b> separation · <b>R</b> reset view<br>
+  <b>click node</b> inspect + blast radius · drop a catalog .json anywhere
+</div>
+
+<div class="panel" id="inspect">
+  <button class="close" id="closeInspect" aria-label="Close">×</button>
+  <div id="inspectBody"></div>
+  <h3>Flows</h3><div id="flows"></div>
+</div>
+
+<div id="drop">DROP CATALOG JSON TO LOAD</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============ Validation engine (Phase A, embedded) ============ */
+const AnatomyValidate=(()=>{ 
+const BOUNDARY_RANK={"commercial":0,"gcc":1,"gcc-high":2,"dod":3};
+const allEdges=c=>(c.layers||[]).flatMap(l=>(l.edges||[]).map(e=>({...e,layer:l.id})));
+const neighbors=c=>{const a={};for(const e of allEdges(c)){(a[e.a]=a[e.a]||new Set()).add(e.b);(a[e.b]=a[e.b]||new Set()).add(e.a);}return a;};
+function unmetRequirements(c){const F=[],adj=neighbors(c),N=c.nodes||{};
+ for(const[id,n]of Object.entries(N))for(const req of(n.requires||[])){
+  const ok=[...(adj[id]||[])].some(nb=>((N[nb]||{}).provides||[]).includes(req));
+  if(!ok)F.push({id:`req:${id}:${req}`,severity:"error",rule:"unmet-requirement",nodeId:id,
+   text:`${n.t||id} requires "${req}" but no connected node provides it.`});}
+ return F;}
+function blastRadius(c,nodeId){const N=c.nodes||{},dep={};
+ for(const[id,n]of Object.entries(N))for(const d of(n.dependsOn||[]))(dep[d]=dep[d]||[]).push(id);
+ const orph=new Set(),q=[nodeId];
+ while(q.length){const cur=q.shift();for(const d of(dep[cur]||[]))if(!orph.has(d)&&d!==nodeId){orph.add(d);q.push(d);}}
+ return{nodeId,orphans:[...orph]};}
+function boundaryPathCheck(c,flow){const N=c.nodes||{},steps=flow.steps||[];
+ const ranks=steps.map(s=>BOUNDARY_RANK[(N[s]||{}).boundary]).filter(r=>r!==undefined);
+ if(!ranks.length)return[];const strict=Math.max(...ranks),F=[];
+ const name=r=>Object.keys(BOUNDARY_RANK).find(k=>BOUNDARY_RANK[k]===r);
+ for(const s of steps){const r=BOUNDARY_RANK[(N[s]||{}).boundary];
+  if(r!==undefined&&r<strict)F.push({id:`boundary:${flow.id}:${s}`,severity:"error",rule:"boundary-violation",nodeId:s,flowId:flow.id,
+   text:`Flow "${flow.name||flow.id}" carries ${name(strict)} data through ${(N[s]||{}).t||(N[s]||{}).l||s} (${(N[s]||{}).boundary}).`});}
+ return F;}
+function validateCatalog(c){const ign=new Set(((c.meta||{}).ignoredFindings)||[]);
+ let F=[...unmetRequirements(c),...((c.flows||[]).flatMap(f=>boundaryPathCheck(c,f)))];
+ F=F.map(f=>ign.has(f.id)?{...f,severity:"info",ignored:true,text:f.text+" (explicitly ignored)"}:f);
+ const per={};const ORD={error:3,warning:2,ignored:1,info:0};
+ for(const f of F)if(f.nodeId){const s=f.ignored?"ignored":f.severity;
+  if((ORD[s]??0)>=(ORD[per[f.nodeId]]??-1))per[f.nodeId]=s;}
+ return{findings:F,perNode:per,summary:{errors:F.filter(f=>f.severity==="error").length,
+  warnings:F.filter(f=>f.severity==="warning").length,ignored:F.filter(f=>f.ignored).length}};}
+return{validateCatalog,blastRadius,boundaryPathCheck,unmetRequirements,BOUNDARY_RANK};
+})();
+
+/* ============ Catalog library ============ */
+const CATALOG_LIBRARY={
+"Sovereign Sample":{
+ "meta":{"title":"Sovereign Sample — validation demo","ignoredFindings":[]},
+ "zones":[{"t":"Commercial","y0":10,"y1":100},{"t":"GCC High","y0":110,"y1":220}],
+ "nodes":{
+  "app1":{"t":"Case Mgmt App","x":120,"y":150,"boundary":"gcc-high","requires":["storage:object"],"dependsOn":["jump1","sql1"],"compliance":{"fedramp":"high","dataClass":"cji"}},
+  "sql1":{"t":"SQL (Gov)","x":240,"y":170,"boundary":"gcc-high","provides":["db:sql"],"dependsOn":["jump1"]},
+  "jump1":{"t":"Jump Box","x":180,"y":205,"boundary":"gcc-high","provides":["admin:access"]},
+  "relay1":{"t":"Integration Relay","x":160,"y":55,"boundary":"commercial","provides":["queue:events"]},
+  "blob1":{"t":"Blob (Gov)","x":320,"y":140,"boundary":"gcc-high","provides":["storage:blob"],"internals":[{"type":"container","count":3}]}
+ },
+ "layers":[
+  {"id":"net","organ":"Vascular","arch":"Network","edges":[
+   {"a":"app1","b":"sql1","proto":"TDS","port":1433,"conn":"lan"},
+   {"a":"app1","b":"relay1","proto":"AMQP","port":5671,"conn":"internet"},
+   {"a":"jump1","b":"sql1","proto":"SSH","port":22,"conn":"lan"}]},
+  {"id":"idn","organ":"Nervous","arch":"Identity","edges":[
+   {"a":"app1","b":"jump1","proto":"Entra","port":443,"conn":"lan"},
+   {"a":"sql1","b":"jump1","proto":"Entra","port":443,"conn":"lan"}]}
+ ],
+ "flows":[
+  {"id":"f-bad","name":"CJI event fan-out","steps":["app1","relay1"],"note":"Deliberate violation."},
+  {"id":"f-good","name":"App to SQL","steps":["app1","sql1"]}
+ ]
+},
+"Zero-Trust Access":{"meta":{"title":"Zero-Trust Network Access","system":"Enterprise ZTNA Reference","version":"1.0","author":"Architecture","updated":"2026-06-23","classification":"","revisions":[{"v":"1.0","date":"2026-06-23","who":"Architecture","note":"Initial baseline. Identity-centric perimeter; no implicit trust by network position."}]},"zones":[{"t":"Internet \u00b7 Untrusted","y0":18,"y1":108},{"t":"Device & Identity Plane","y0":108,"y1":230},{"t":"Policy Enforcement","y0":230,"y1":350},{"t":"Protected Resources","y0":350,"y1":510},{"t":"Monitoring & SOC","y0":510,"y1":630},{"t":"Resilience","y0":630,"y1":702}],"nodes":{"rmt_usr":{"x":160,"y":62,"l":"Remote Users","zone":"Internet \u00b7 Untrusted","host":"\u2014","cls":"pub","tier":3,"eol":null,"icon":"users"},"mob_usr":{"x":400,"y":62,"l":"Mobile Devices","zone":"Internet \u00b7 Untrusted","host":"\u2014","cls":"pub","tier":3,"eol":null,"icon":"generic"},"ptnr":{"x":640,"y":62,"l":"Partner / B2B","zone":"Internet \u00b7 Untrusted","host":"\u2014","cls":"pub","tier":3,"eol":null,"icon":"users"},"branch":{"x":880,"y":62,"l":"Branch Workers","zone":"Internet \u00b7 Untrusted","host":"SD-WAN","cls":"int","tier":2,"eol":null,"icon":"users"},"entra":{"x":260,"y":168,"l":"Entra ID / IdP","zone":"Device & Identity Plane","host":"Microsoft cloud","cls":"conf","tier":1,"eol":null,"icon":"identity","children":[{"id":"dir_users","l":"User Directory","type":"service","cls":"conf"},{"id":"dir_groups","l":"Groups & Roles","type":"service","cls":"conf"},{"id":"dir_apps","l":"App Registrations","type":"service","cls":"reg"},{"id":"dir_b2b","l":"B2B Guest","type":"zone","cls":"pub"},{"id":"dir_pim","l":"PIM Roles","type":"service","cls":"reg"}],"childEdges":[{"a":"dir_users","b":"dir_groups","proto":"membership"},{"a":"dir_groups","b":"dir_apps","proto":"assignment"},{"a":"dir_pim","b":"dir_groups","proto":"elevates"}]},"intune":{"x":520,"y":168,"l":"Device Compliance","zone":"Device & Identity Plane","host":"Intune / MDM","cls":"conf","tier":1,"eol":null,"icon":"generic"},"ca_pol":{"x":780,"y":168,"l":"Conditional Access","zone":"Device & Identity Plane","host":"Entra CA engine","cls":"reg","tier":1,"eol":null,"icon":"network"},"ztna_px":{"x":260,"y":290,"l":"ZTNA Proxy Cluster","zone":"Policy Enforcement","host":"cloud-POP","cls":"conf","tier":1,"eol":null,"icon":"network","children":[{"id":"px_us","l":"POP US-East","type":"zone","cls":"int","addr":"52.x.x.x"},{"id":"px_eu","l":"POP EU-West","type":"zone","cls":"int","addr":"13.x.x.x"},{"id":"px_ap","l":"POP AP-SE","type":"zone","cls":"int","addr":"54.x.x.x"},{"id":"px_pol","l":"Policy Engine","type":"service","cls":"conf"},{"id":"px_tun","l":"TLS Tunnel","type":"service","cls":"conf","addr":"mTLS 1.3"}],"childEdges":[{"a":"px_pol","b":"px_us","proto":"enforce"},{"a":"px_pol","b":"px_eu","proto":"enforce"},{"a":"px_pol","b":"px_ap","proto":"enforce"},{"a":"px_tun","b":"px_pol","proto":"decrypt\u2192inspect"}]},"mfa_gw":{"x":520,"y":290,"l":"Phish-Resist MFA","zone":"Policy Enforcement","host":"FIDO2 / passkey","cls":"conf","tier":1,"eol":null,"icon":"identity"},"pam":{"x":780,"y":290,"l":"PAM \u00b7 Priv Vault","zone":"Policy Enforcement","host":"dedicated VM","cls":"reg","tier":1,"eol":null,"icon":"identity","children":[{"id":"pam_creds","l":"Cred Vault","type":"volume","cls":"reg"},{"id":"pam_sess","l":"Session Proxy","type":"service","cls":"reg"},{"id":"pam_rec","l":"Session Record","type":"storage","cls":"reg"},{"id":"pam_just","l":"Just-in-Time","type":"service","cls":"reg"}],"childEdges":[{"a":"pam_just","b":"pam_creds","proto":"releases"},{"a":"pam_sess","b":"pam_rec","proto":"records"},{"a":"pam_creds","b":"pam_sess","proto":"injects"}]},"corp_app":{"x":160,"y":430,"l":"Corp Applications","zone":"Protected Resources","host":"on-prem / IaaS","cls":"conf","tier":2,"eol":null,"icon":"server"},"dev_env":{"x":420,"y":430,"l":"Dev & CI Pipeline","zone":"Protected Resources","host":"IaaS","cls":"int","tier":3,"eol":null,"icon":"server"},"fin_sys":{"x":650,"y":430,"l":"Finance & Payroll","zone":"Protected Resources","host":"SaaS / IaaS","cls":"reg","tier":1,"eol":null,"icon":"server"},"db_core":{"x":880,"y":430,"l":"Core DB Cluster","zone":"Protected Resources","host":"on-prem physical","cls":"reg","tier":1,"eol":null,"icon":"db"},"siem":{"x":280,"y":570,"l":"SIEM \u00b7 Log Agg","zone":"Monitoring & SOC","host":"cloud SIEM","cls":"conf","tier":1,"eol":null,"icon":"storage"},"xdr":{"x":560,"y":570,"l":"EDR / XDR","zone":"Monitoring & SOC","host":"SaaS agent","cls":"conf","tier":1,"eol":null,"icon":"generic"},"ir_team":{"x":840,"y":570,"l":"IR \u00b7 SOC Analysts","zone":"Monitoring & SOC","host":"\u2014","cls":"conf","tier":2,"eol":null,"icon":"users"},"immut_bak":{"x":520,"y":665,"l":"Immutable Backup","zone":"Resilience","host":"air-gap object store","cls":"reg","tier":1,"eol":null,"icon":"storage"}},"layers":[{"id":"nerv","organ":"Nervous","arch":"Identity & Policy","color":"var(--nervous)","blend":true,"flow":true,"hub":"entra","edges":[{"a":"entra","b":"intune","proto":"SCIM","port":443,"conn":"internet"},{"a":"intune","b":"ca_pol","proto":"Graph","port":443,"conn":"internet"},{"a":"entra","b":"ca_pol","proto":"OIDC","port":443,"conn":"internet"},{"a":"ca_pol","b":"mfa_gw","proto":"FIDO2","port":443,"conn":"internet"},{"a":"ca_pol","b":"ztna_px","proto":"policy","port":443,"conn":"internet"},{"a":"mfa_gw","b":"ztna_px","proto":"token","port":443,"conn":"internet"},{"a":"entra","b":"ztna_px","proto":"SAML","port":443,"conn":"internet"},{"a":"pam","b":"fin_sys","proto":"session","port":443,"conn":"lan"},{"a":"pam","b":"db_core","proto":"session","port":443,"conn":"lan"}]},{"id":"skel","organ":"Osseous","arch":"Access Fabric","color":"var(--skeleton)","blend":true,"flow":true,"edges":[{"a":"rmt_usr","b":"ztna_px","proto":"HTTPS","port":443,"conn":"internet"},{"a":"mob_usr","b":"ztna_px","proto":"HTTPS","port":443,"conn":"internet"},{"a":"ptnr","b":"ztna_px","proto":"HTTPS","port":443,"conn":"internet"},{"a":"branch","b":"ztna_px","proto":"IPsec","port":4500,"conn":"vpn"},{"a":"ztna_px","b":"corp_app","proto":"HTTPS","port":443,"conn":"lan"},{"a":"ztna_px","b":"dev_env","proto":"HTTPS","port":443,"conn":"lan"},{"a":"ztna_px","b":"fin_sys","proto":"HTTPS","port":443,"conn":"lan"},{"a":"ztna_px","b":"pam","proto":"HTTPS","port":443,"conn":"lan"},{"a":"corp_app","b":"db_core","proto":"TDS","port":1433,"conn":"lan"},{"a":"fin_sys","b":"db_core","proto":"TDS","port":1433,"conn":"lan"}]},{"id":"vasc","organ":"Vascular","arch":"Detection & Response","color":"var(--vascular)","blend":true,"flow":true,"edges":[{"a":"xdr","b":"rmt_usr","proto":"agent","port":443,"conn":"internet"},{"a":"xdr","b":"mob_usr","proto":"agent","port":443,"conn":"internet"},{"a":"xdr","b":"corp_app","proto":"agent","port":443,"conn":"lan"},{"a":"siem","b":"xdr","proto":"syslog","port":514,"conn":"internet"},{"a":"siem","b":"ztna_px","proto":"syslog","port":514,"conn":"internet"},{"a":"siem","b":"ir_team","proto":"alert","port":443,"conn":"internet"},{"a":"xdr","b":"ir_team","proto":"alert","port":443,"conn":"internet"}]},{"id":"data","organ":"Visceral","arch":"Backup & Recovery","color":"var(--lymph)","blend":true,"flow":false,"edges":[{"a":"db_core","b":"immut_bak","proto":"snapshot","conn":"repl","rpo":"4hr","rto":"8hr"},{"a":"fin_sys","b":"immut_bak","proto":"backup","conn":"repl","rpo":"1hr","rto":"4hr"},{"a":"corp_app","b":"immut_bak","proto":"backup","conn":"repl","rpo":"24hr","rto":"24hr"}]}],"flows":[{"id":"f1","name":"Remote access \u2192 Finance","steps":["rmt_usr","ztna_px","mfa_gw","pam","fin_sys","db_core"],"note":"All access authenticated at IdP, device-compliant, MFA-gated, brokered through PAM. No lateral movement possible \u2014 workloads never see raw credentials."},{"id":"f2","name":"Identity chain: device \u2192 policy \u2192 access","steps":["intune","ca_pol","ztna_px","corp_app"],"note":"Conditional Access evaluates device health signal from Intune before issuing token to ZTNA proxy."},{"id":"f3","name":"Incident: SOC triage","steps":["xdr","siem","ir_team"],"note":"EDR telemetry aggregates into SIEM; SOC analysts receive correlated alert and open IR playbook."}]}
+};
+
+/* ============ Scene ============ */
+const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const stage=document.getElementById("stage");
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+stage.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x070b14);
+scene.fog=new THREE.Fog(0x070b14,260,560);
+const camera=new THREE.PerspectiveCamera(46,1,0.1,2000);
+
+/* Minimal orbit controls */
+const orbit={theta:-0.85,phi:1.02,dist:230,target:new THREE.Vector3(0,18,0)};
+const HOME=JSON.parse(JSON.stringify({theta:orbit.theta,phi:orbit.phi,dist:orbit.dist,target:{x:0,y:18,z:0}}));
+function applyCam(){
+ const t=orbit.target;
+ camera.position.set(
+  t.x+orbit.dist*Math.sin(orbit.phi)*Math.cos(orbit.theta),
+  t.y+orbit.dist*Math.cos(orbit.phi),
+  t.z+orbit.dist*Math.sin(orbit.phi)*Math.sin(orbit.theta));
+ camera.lookAt(t);
+}
+let drag=null;
+renderer.domElement.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button===2};renderer.domElement.setPointerCapture(e.pointerId);});
+renderer.domElement.addEventListener("pointermove",e=>{
+ if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
+  if(drag.pan){const s=orbit.dist/700;
+   const right=new THREE.Vector3().subVectors(camera.position,orbit.target).cross(camera.up).normalize();
+   orbit.target.addScaledVector(right,dx*s);orbit.target.y+=dy*s;}
+  else{orbit.theta+=dx*0.005;orbit.phi=Math.min(Math.max(orbit.phi-dy*0.005,0.15),1.5);}
+  drag.moved=(drag.moved||0)+Math.abs(dx)+Math.abs(dy);}
+ else hover(e);
+});
+renderer.domElement.addEventListener("pointerup",e=>{if(drag&&(drag.moved||0)<5)pick(e);drag=null;});
+renderer.domElement.addEventListener("contextmenu",e=>e.preventDefault());
+renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();focusAnim=null;preFocusDist=null;orbit.dist=Math.min(Math.max(orbit.dist*(1+e.deltaY*0.001),60),620);},{passive:false});
+
+/* ============ Build world from catalog ============ */
+const COL={internet:0x5ec8e5,lan:0x69d18c,er:0x9d8cff,wan:0x9d8cff,default:0x5b7392,
+ error:0xff4d5e,warning:0xe0a94e,ignored:0xe0a94e,ok:0x18324a};
+let CAT=null,VAL=null,world=null,nodeMeshes=[],spines=[],layerGroups=[],flowLine=null,selected=null,hovered=null;
+const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
+
+function labelTexture(text,sub,status){
+ const c=document.createElement("canvas");c.width=256;c.height=128;const g=c.getContext("2d");
+ g.fillStyle="#0c1322";g.fillRect(0,0,256,128);
+ g.strokeStyle=status==="error"?"#ff4d5e":status==="warning"||status==="ignored"?"#e0a94e":"#2a3d5e";
+ g.lineWidth=6;g.strokeRect(4,4,248,120);
+ g.fillStyle="#dfe8f2";g.font="600 26px Consolas,monospace";g.textAlign="center";
+ wrap(g,text,128,54,230,30);
+ if(sub){g.fillStyle="#7a8aa0";g.font="20px Consolas,monospace";g.fillText(sub.toUpperCase(),128,104);}
+ const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;
+}
+function wrap(g,text,x,y,maxW,lh){const words=String(text).split(" ");let line="",yy=y;
+ for(const w of words){const test=line?line+" "+w:w;
+  if(g.measureText(test).width>maxW&&line){g.fillText(line,x,yy);line=w;yy+=lh;}else line=test;}
+ g.fillText(line,x,yy);}
+
+function build(cat){
+ if(world)scene.remove(world);
+ nodeMeshes=[];spines=[];layerGroups=[];flowLine=null;selected=null;
+ CAT=cat;VAL=AnatomyValidate.validateCatalog(cat);
+ world=new THREE.Group();scene.add(world);
+ const nodes=cat.nodes||{},layers=cat.layers||[];
+ /* bounds -> world scale */
+ const xs=Object.values(nodes).map(n=>n.x||0),ys=Object.values(nodes).map(n=>n.y||0);
+ const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+ const W=150,D=110,pad=14;
+ const sx=v=>((v-minX)/Math.max(maxX-minX,1)-0.5)*W;
+ const sz=v=>((v-minY)/Math.max(maxY-minY,1)-0.5)*D;
+ const planeW=W+pad*2,planeD=D+pad*2;
+
+ layers.forEach((layer,i)=>{
+  const g=new THREE.Group();g.userData={idx:i,id:layer.id,visible:true};
+  /* plane */
+  const plane=new THREE.Mesh(new THREE.PlaneGeometry(planeW,planeD),
+   new THREE.MeshBasicMaterial({color:0x11203a,transparent:true,opacity:0.16,side:THREE.DoubleSide,depthWrite:false}));
+  plane.rotation.x=-Math.PI/2;g.add(plane);
+  const border=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(planeW,planeD)),
+   new THREE.LineBasicMaterial({color:0x2a3d5e,transparent:true,opacity:0.9}));
+  border.rotation.x=-Math.PI/2;g.add(border);
+  /* zones as strips (mapped from catalog 2D y) */
+  for(const z of(cat.zones||[])){
+   const z0=sz(z.y0),z1=sz(z.y1);
+   const strip=new THREE.Mesh(new THREE.PlaneGeometry(planeW,Math.abs(z1-z0)),
+    new THREE.MeshBasicMaterial({color:0x5ec8e5,transparent:true,opacity:0.045,side:THREE.DoubleSide,depthWrite:false}));
+   strip.rotation.x=-Math.PI/2;strip.position.set(0,0.05,(z0+z1)/2);g.add(strip);
+  }
+  /* layer label */
+  const lt=labelTexture(layer.arch||layer.id,layer.organ||"", "ok");
+  const lbl=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true,opacity:0.9}));
+  lbl.scale.set(26,13,1);lbl.position.set(-planeW/2+16,5,-planeD/2+8);g.add(lbl);
+  /* participants + edges */
+  const parts=new Set();(layer.edges||[]).forEach(e=>{parts.add(e.a);parts.add(e.b);});
+  for(const e of(layer.edges||[])){
+   const A=nodes[e.a],B=nodes[e.b];if(!A||!B)continue;
+   const geo=new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(sx(A.x),1.4,sz(A.y)),new THREE.Vector3(sx(B.x),1.4,sz(B.y))]);
+   const mat=new THREE.LineBasicMaterial({color:COL[e.conn]||COL.default,transparent:true,opacity:0.85});
+   const ln=new THREE.Line(geo,mat);ln.userData={edge:e};g.add(ln);
+  }
+  for(const id of parts){
+   const n=nodes[id];if(!n)continue;
+   const status=VAL.perNode[id]||"ok";
+   const sideC=status==="error"?COL.error:status==="warning"?COL.warning:status==="ignored"?COL.ignored:COL.ok;
+   const side=new THREE.MeshBasicMaterial({color:sideC});
+   const top=new THREE.MeshBasicMaterial({map:labelTexture(n.t||n.l||id,n.boundary,status)});
+   const bot=new THREE.MeshBasicMaterial({color:0x0c1322});
+   const mesh=new THREE.Mesh(new THREE.BoxGeometry(13,1.6,7),[side,side,top,bot,side,side]);
+   mesh.position.set(sx(n.x),0.9,sz(n.y));
+   mesh.userData={nodeId:id,layerIdx:i,baseColor:sideC};
+   g.add(mesh);nodeMeshes.push(mesh);
+  }
+  world.add(g);layerGroups.push(g);
+ });
+ /* spines: same node across multiple layers */
+ const byNode={};nodeMeshes.forEach(m=>{(byNode[m.userData.nodeId]=byNode[m.userData.nodeId]||[]).push(m);});
+ for(const[id,arr]of Object.entries(byNode)){
+  if(arr.length<2)continue;
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute("position",new THREE.BufferAttribute(new Float32Array(arr.length*3),3));
+  const mat=new THREE.LineDashedMaterial({color:0x5ec8e5,dashSize:1.6,gapSize:1.4,transparent:true,opacity:0});
+  const ln=new THREE.Line(geo,mat);ln.userData={nodeId:id,meshes:arr};
+  world.add(ln);spines.push(ln);
+ }
+ ui(); layoutLayers(true);
+}
+
+let sepTarget=0,sepNow=0;   /* 0..1 */
+const SEP_MAX=30;
+function layoutLayers(force){
+ layerGroups.forEach((g,i)=>{g.position.y=i*sepNow*SEP_MAX;g.visible=g.userData.visible;});
+ spines.forEach(s=>{
+  const pos=s.geometry.attributes.position;
+  s.userData.meshes.forEach((m,i)=>{
+   const p=new THREE.Vector3();m.getWorldPosition(p);pos.setXYZ(i,p.x,p.y,p.z);});
+  pos.needsUpdate=true;s.computeLineDistances();
+  s.material.opacity=0.55*sepNow*(s.userData.meshes.some(m=>!layerGroups[m.userData.layerIdx].userData.visible)?0:1);
+ });
+ if(flowLine)drawFlow(flowLine.userData.flow,true);
+}
+
+/* ============ Picking / hover / inspect ============ */
+function castAt(e){
+ const r=renderer.domElement.getBoundingClientRect();
+ mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+ raycaster.setFromCamera(mouse,camera);
+ const vis=nodeMeshes.filter(m=>layerGroups[m.userData.layerIdx].userData.visible);
+ return raycaster.intersectObjects(vis)[0]?.object||null;
+}
+function hover(e){
+ const m=castAt(e);
+ if(hovered&&hovered!==m)tint(hovered,null);
+ hovered=m;renderer.domElement.style.cursor=m?"pointer":"default";
+ if(m)tint(m,0xffffff,0.25);
+}
+function tint(mesh,color,amt){
+ const same=nodeMeshes.filter(x=>x.userData.nodeId===mesh.userData.nodeId);
+ same.forEach(x=>{x.material.forEach?.(()=>{});
+  const mats=Array.isArray(x.material)?x.material:[x.material];
+  mats.forEach((mm,i)=>{if(i===2)return;/* keep label face */
+   mm.color.set(color?new THREE.Color(x.userData.baseColor).lerp(new THREE.Color(color),amt):x.userData.baseColor);});});
+}
+function pick(e){
+ const m=castAt(e);
+ if(!m){return;}
+ select(m.userData.nodeId,m);
+}
+function select(id,mesh){
+ nodeMeshes.forEach(x=>tint(x,null));
+ selected=id;
+ const n=CAT.nodes[id]||{};
+ const blast=AnatomyValidate.blastRadius(CAT,id);
+ blast.orphans.forEach(o=>nodeMeshes.filter(x=>x.userData.nodeId===o).forEach(x=>tint(x,COL.error,0.55)));
+ nodeMeshes.filter(x=>x.userData.nodeId===id).forEach(x=>tint(x,0xffffff,0.4));
+ const F=VAL.findings.filter(f=>f.nodeId===id);
+ const li=a=>a&&a.length?a.map(x=>`<li>· ${esc(x)}</li>`).join(""):"<li style='color:var(--muted)'>— none</li>";
+ document.getElementById("inspectBody").innerHTML=
+  `<h2>${esc(n.t||n.l||id)}</h2>`+
+  `<span class="tag">${esc(n.boundary||"no boundary tag")}</span>`+
+  (n.compliance?`<span class="tag">${esc(n.compliance.fedramp?("FedRAMP "+n.compliance.fedramp):"")}${esc(n.compliance.dataClass?(" · "+n.compliance.dataClass.toUpperCase()):"")}</span>`:"")+
+  `<h3>Requires</h3><ul>${li(n.requires)}</ul>`+
+  `<h3>Provides</h3><ul>${li(n.provides)}</ul>`+
+  `<h3>Depends on</h3><ul>${li(n.dependsOn)}</ul>`+
+  `<h3>Findings</h3><ul>${F.length?F.map(f=>`<li class="${f.ignored?"ign":f.severity==="error"?"err":"warn"}">▲ ${esc(f.text)}</li>`).join(""):"<li style='color:var(--muted)'>— clean</li>"}</ul>`+
+  `<h3>Blast radius</h3><ul>${blast.orphans.length?blast.orphans.map(o=>`<li class="err">✕ ${esc((CAT.nodes[o]||{}).t||(CAT.nodes[o]||{}).l||o)}</li>`).join(""):"<li style='color:var(--muted)'>— nothing depends on this</li>"}</ul>`;
+ document.getElementById("inspect").style.display="block";
+ /* focus */
+ const p=new THREE.Vector3();(mesh||nodeMeshes.find(x=>x.userData.nodeId===id)).getWorldPosition(p);
+ focusTo(p,46);
+}
+let focusAnim=null,preFocusDist=null;
+function focusTo(p,dist){
+ if(dist!==undefined&&preFocusDist===null)preFocusDist=orbit.dist;
+ focusAnim={from:orbit.target.clone(),to:p.clone(),t:0,
+  fromDist:orbit.dist,toDist:dist!==undefined?dist:orbit.dist};
+}
+document.getElementById("closeInspect").onclick=()=>{
+ document.getElementById("inspect").style.display="none";
+ nodeMeshes.forEach(x=>tint(x,null));selected=null;
+ if(preFocusDist!==null){focusAnim={from:orbit.target.clone(),to:orbit.target.clone(),t:0,fromDist:orbit.dist,toDist:preFocusDist};preFocusDist=null;}};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ============ Flows ============ */
+function drawFlow(flow,keep){
+ if(flowLine){world.remove(flowLine);flowLine=null;}
+ if(!flow)return;
+ const pts=[];
+ for(const s of flow.steps||[]){
+  const m=nodeMeshes.find(x=>x.userData.nodeId===s&&layerGroups[x.userData.layerIdx].userData.visible)
+        ||nodeMeshes.find(x=>x.userData.nodeId===s);
+  if(!m)continue;const p=new THREE.Vector3();m.getWorldPosition(p);p.y+=3.2;pts.push(p);
+ }
+ if(pts.length<2)return;
+ const bad=AnatomyValidate.boundaryPathCheck(CAT,flow).length>0;
+ flowLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+  new THREE.LineBasicMaterial({color:bad?COL.error:0x5ec8e5,transparent:true,opacity:0.95,linewidth:2}));
+ flowLine.userData={flow};world.add(flowLine);
+}
+
+/* ============ UI ============ */
+function ui(){
+ document.getElementById("cattitle").textContent=(CAT.meta&&CAT.meta.title)||"untitled catalog";
+ const s=VAL.summary;
+ document.getElementById("sum").innerHTML=
+  `<span class="e">▲ ${s.errors} error${s.errors===1?"":"s"}</span>`+
+  `<span class="w">▲ ${s.warnings} warn</span>`+
+  `<span class="i">◇ ${s.ignored} ignored</span>`;
+ const ll=document.getElementById("layerlist");ll.innerHTML="";
+ layerGroups.forEach((g,i)=>{
+  const L=CAT.layers[i];
+  const row=document.createElement("div");row.className="lyr";row.tabIndex=0;
+  row.innerHTML=`<span class="sw" style="background:${g.userData.visible?"var(--cyan)":"transparent"}"></span>${esc(L.arch||L.id)} <span style="color:var(--muted)">· ${esc(L.organ||"")}</span>`;
+  const tog=()=>{g.userData.visible=!g.userData.visible;row.classList.toggle("off",!g.userData.visible);
+   row.querySelector(".sw").style.background=g.userData.visible?"var(--cyan)":"transparent";layoutLayers();};
+  row.onclick=tog;row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tog();}};
+  ll.appendChild(row);
+ });
+ const cats=document.getElementById("cats");cats.innerHTML="";
+ for(const name of Object.keys(CATALOG_LIBRARY)){
+  const b=document.createElement("button");b.textContent=name;
+  b.className=(CAT===CATALOG_LIBRARY[name])?"on":"";
+  b.onclick=()=>build(CATALOG_LIBRARY[name]);cats.appendChild(b);
+ }
+ const fl=document.getElementById("flows");fl.innerHTML="";
+ (CAT.flows||[]).forEach(f=>{
+  const bad=AnatomyValidate.boundaryPathCheck(CAT,f).length>0;
+  const b=document.createElement("button");b.textContent=(bad?"▲ ":"")+(f.name||f.id);
+  if(bad)b.className="bad";
+  b.onclick=()=>{ if(flowLine&&flowLine.userData.flow===f){drawFlow(null);}else drawFlow(f); };
+  fl.appendChild(b);
+ });
+ document.getElementById("inspect").style.display="block";
+ document.getElementById("inspectBody").innerHTML=
+  `<h2>${esc((CAT.meta&&CAT.meta.title)||"Catalog")}</h2>`+
+  `<span class="tag">${Object.keys(CAT.nodes||{}).length} nodes</span><span class="tag">${(CAT.layers||[]).length} layers</span>`+
+  `<h3>Validation</h3><ul>${VAL.findings.length?VAL.findings.map(f=>`<li class="${f.ignored?"ign":f.severity==="error"?"err":"warn"}">▲ ${esc(f.text)}</li>`).join(""):"<li style='color:var(--muted)'>— catalog is clean</li>"}</ul>`;
+}
+
+/* ============ Input: keys, slider, drop ============ */
+const sep=document.getElementById("sep");
+sep.addEventListener("input",()=>{sepTarget=sep.value/100;});
+addEventListener("keydown",e=>{
+ if(e.target.tagName==="INPUT"&&e.key!==" ")return;
+ if(e.key===" "){e.preventDefault();sepTarget=sepTarget>0.5?0:1;sep.value=sepTarget*100;}
+ if(e.key==="ArrowUp"){sepTarget=Math.min(1,sepTarget+0.1);sep.value=sepTarget*100;}
+ if(e.key==="ArrowDown"){sepTarget=Math.max(0,sepTarget-0.1);sep.value=sepTarget*100;}
+ if(e.key==="f"||e.key==="F"){sepTarget=0;sep.value=0;}
+ if(e.key==="r"||e.key==="R"){orbit.theta=HOME.theta;orbit.phi=HOME.phi;orbit.dist=HOME.dist;orbit.target.set(HOME.target.x,HOME.target.y,HOME.target.z);}
+});
+addEventListener("dragover",e=>{e.preventDefault();document.getElementById("drop").style.display="flex";});
+addEventListener("dragleave",e=>{if(e.relatedTarget===null)document.getElementById("drop").style.display="none";});
+addEventListener("drop",async e=>{
+ e.preventDefault();document.getElementById("drop").style.display="none";
+ const f=e.dataTransfer.files[0];if(!f)return;
+ try{const j=JSON.parse(await f.text());
+  if(j&&j.nodes&&j.layers){CATALOG_LIBRARY[f.name.replace(/\.json$/,"")]=j;build(j);}
+  else alert("Not a catalog: needs nodes + layers.");
+ }catch(err){alert("Invalid JSON: "+err.message);}
+});
+
+/* ============ Loop ============ */
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
+addEventListener("resize",resize);resize();
+function loop(){
+ requestAnimationFrame(loop);
+ const ease=RM?1:0.08;
+ if(Math.abs(sepTarget-sepNow)>0.0005){sepNow+=(sepTarget-sepNow)*ease;layoutLayers();}
+ if(focusAnim){focusAnim.t=RM?1:Math.min(1,focusAnim.t+0.05);
+  const k=1-Math.pow(1-focusAnim.t,3);
+  orbit.target.lerpVectors(focusAnim.from,focusAnim.to,k);
+  orbit.dist=focusAnim.fromDist+(focusAnim.toDist-focusAnim.fromDist)*k;
+  if(focusAnim.t>=1)focusAnim=null;}
+ applyCam();renderer.render(scene,camera);
+}
+build(CATALOG_LIBRARY["Sovereign Sample"]);
+/* opening moment: fold -> explode, once */
+if(!RM){setTimeout(()=>{sepTarget=1;sep.value=100;},450);}else{sepTarget=1;sepNow=1;sep.value=100;layoutLayers();}
+loop();
+</script>
+</body>
+</html>
