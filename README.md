@@ -59,6 +59,6 @@ CI runs a fingerprint gate (`scripts/sanitize-check.sh`) and the engine tests on
 
 ## Part of the Cornerstone Method
 
-**Know → Define → Assess → Shape → Verify → Visualize.** Architecture Anatomy is the **Visualize** verb.
+**Know → Define → Assess → Shape → Verify → Visualize.** CloudIntelMatrix is the **Know** verb — verified capability and compliance facts feed every downstream decision.
 
-Siblings: [CloudIntelMatrix](https://github.com/MW8-ai/CloudIntelMatrix) (Know) · Architect's Cornerstone (Define) · Architecture Review Framework + Review Skill (Assess) · Formwork (Shape) · Plumbline (Verify)
+Siblings: [Architecture Anatomy](https://github.com/MW8-ai/architecture-anatomy) (Visualize — [live atlas](https://mw8-ai.github.io/architecture-anatomy/) · [exploded 3D](https://mw8-ai.github.io/architecture-anatomy/3d-prototype.html)) · Architect's Cornerstone (Define) · Architecture Review Framework + Review Skill (Assess) · Formwork (Shape) · Plumbline (Verify)
