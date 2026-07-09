@@ -1,12 +1,13 @@
 // Architecture Anatomy — service worker
 // Stale-while-revalidate for app shell; network-first for catalogs.
-const CACHE = 'anatomy-v1.8.0';
+const CACHE = 'anatomy-v1.8.1';
 const SHELL = [
   './',
   './index.html',
   './atlas.html',
   './3d-prototype.html',
   './tools/svg-renderer.js',
+  './lib/resolve-catalog-param.js',
   './manifest.json'
 ];
 

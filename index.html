@@ -90,7 +90,8 @@ button:focus-visible{outline:1px solid var(--cyan);outline-offset:2px}
 
 <div id="drop">DROP CATALOG JSON TO LOAD</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="lib/resolve-catalog-param.js"></script>
 <script>
 /* ============ Validation engine (Phase A, embedded) ============ */
 const AnatomyValidate=(()=>{ 
@@ -157,7 +158,7 @@ const CATALOG_LIBRARY={
 };
 
 /* ============ Scene ============ */
-const VIEW_VERSION="v1.8.0";(function(){var s=document.querySelector("#titleblock .sheet span:last-child");if(s)s.textContent="SHEET 3D-01 · REV "+VIEW_VERSION;})();
+const VIEW_VERSION="v1.8.1";(function(){var s=document.querySelector("#titleblock .sheet span:last-child");if(s)s.textContent="SHEET 3D-01 · REV "+VIEW_VERSION;})();
 const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const stage=document.getElementById("stage");
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -606,7 +607,8 @@ function loop(){
 (async()=>{
  const p=new URLSearchParams(location.search).get("cat");
  let first=null;
- if(p){const path=p.includes("/")?p:"catalogs/"+p;
+ const path=resolveCatalogParam(p);
+ if(path){
   try{const r=await fetch(path,{cache:"no-store"});
    if(r.ok){const j=await r.json();
     if(j&&j.nodes&&j.layers){CATALOG_LIBRARY[(j.meta&&j.meta.title)||p]=j;first=j;}}}catch(e){}}

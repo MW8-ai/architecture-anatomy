@@ -2,6 +2,12 @@
 
 All notable changes to Architecture Anatomy.
 
+## v1.8.1
+- **Security: DOM XSS in atlas.html.** `?catalog=`/`?diff=` accepted any absolute/cross-origin URL and fetched it with no origin check; the resulting catalog data (node labels, metadata, edge protocols, revision log, diff summaries, sub-component SVG, ~20 call sites) was written into `innerHTML` unescaped. Fixed with two layers: `lib/resolve-catalog-param.js` (new, shared, tested) and a new `escHtml()` wrapping every catalog-derived interpolation across both readout panels and the theater view. `index.html`'s `?cat=` had the same unguarded URL construction (lower severity there since its `esc()` was already escaping output) and now shares the same guard.
+- **The first version of the guard was a denylist and had real bypasses**, caught in review before merge: `\evil.com/...`, leading whitespace/tab before a scheme, and percent-encoded traversal all normalize past a string-pattern check (verified against actual browser URL resolution, not assumed). Replaced with an allowlist built on `new URL()` resolution — let the browser's own parser normalize the string, then check the *resolved* origin and path are same-origin and confined to `catalogs/`. A denylist has to predict every normalization quirk in advance; an allowlist just checks the outcome.
+- **Hardening:** SRI hash + `crossorigin`/`referrerpolicy` added to the three.js CDN `<script>` tag in index.html.
+- New regression test: `test/resolve-catalog-param.test.mjs`, 15 cases including the bypasses above.
+
 ## v1.8.0
 - **3D promoted to main view.** 2D atlas preserved at atlas.html; views cross-link. Redirect stub at old 3D URL.
 - Search-to-focus, zone labels on base plane, deep links (?cat= &node= &flow=), picker dedupe.

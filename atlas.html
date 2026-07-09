@@ -506,9 +506,11 @@
 </div>
 
 <script src="tools/svg-renderer.js"></script>
+<script src="lib/resolve-catalog-param.js"></script>
 <script>
 const NS="http://www.w3.org/2000/svg";const VB={w:1040,h:720};
-const APP_VERSION="v1.8.0";
+const APP_VERSION="v1.8.1";
+const escHtml=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 // ====================== SINGLE SOURCE OF TRUTH ======================
 const DEFAULT_CATALOG = {
@@ -543,7 +545,7 @@ const TIER={1:{t:"Mission",c:"#ff6b6b"},2:{t:"Business",c:"#ffb14d"},3:{t:"Admin
 let CAT=normalize(structuredClone(DEFAULT_CATALOG));
 let catSource="embedded default";
 const _catParam=new URLSearchParams(location.search).get("catalog");
-const CATALOG_URL=_catParam?(_catParam.includes("/")?_catParam:"catalogs/"+_catParam):"catalogs/zero-trust-access.json";
+const CATALOG_URL=resolveCatalogParam(_catParam)||"catalogs/zero-trust-access.json";
 const BW=128,BH=46;
 const state={layers:{},overlays:{zones:true,cls:false,NIST:false,HIPAA:false,ATO:false,cross:false,elabels:false,eol:false,tier:false,resilience:false,rporto:false},
   peel:0,peelTarget:0,pinned:null,rotX:0,rotY:0,zoom:1,panx:0,pany:0,
@@ -768,12 +770,12 @@ function renderReadout(id){
   const box=document.getElementById('readout');
   if(!id){box.innerHTML='<p class="ro-empty">No component selected. Hover the body to inspect how one system threads through structure, traffic, identity, and data at once — or hover an edge for its protocol.</p>';return;}
   const n=CAT.nodes[id];const planes=CAT.layers.filter(L=>L.edges.some(e=>e.a===id||e.b===id));
-  const pill=planes.map(L=>`<span style="color:${L.color}">${L.organ}</span>`).join('');
-  const sc=(n.scopes||[]).map(s=>{const d=SCOPES.find(x=>x.id===s);return `<span style="color:${d.c}">●</span> ${d.t}`;}).join('<br>')||'<span style="color:var(--muted)">none</span>';
+  const pill=planes.map(L=>`<span style="color:${L.color}">${escHtml(L.organ)}</span>`).join('');
+  const sc=(n.scopes||[]).map(s=>{const d=SCOPES.find(x=>x.id===s);return `<span style="color:${d.c}">●</span> ${escHtml(d.t)}`;}).join('<br>')||'<span style="color:var(--muted)">none</span>';
   const st=eolStatus(n.eol);const tc=TIER[n.tier]||TIER[3];
-  box.innerHTML=`<div class="ro-id">${id.toUpperCase()} ${state.pinned===id?'· PINNED':''}</div><div class="ro-name">${n.l}</div>
+  box.innerHTML=`<div class="ro-id">${id.toUpperCase()} ${state.pinned===id?'· PINNED':''}</div><div class="ro-name">${escHtml(n.l)}</div>
     <dl class="ro-grid">
-      <dt>Zone</dt><dd>${n.zone}</dd><dt>Hosting</dt><dd>${n.host}</dd><dt>Owner</dt><dd>${n.owner||"—"}</dd>
+      <dt>Zone</dt><dd>${escHtml(n.zone)}</dd><dt>Hosting</dt><dd>${escHtml(n.host)}</dd><dt>Owner</dt><dd>${escHtml(n.owner)||"—"}</dd>
       <dt>Criticality</dt><dd><span style="color:${tc.c}">●</span> T${n.tier} · ${tc.t}</dd>
       <dt>Lifecycle</dt><dd><span style="color:${st.c}">●</span> ${st.t}</dd>
       <dt>Data class</dt><dd><span style="color:${CLS[n.cls].c}">●</span> ${CLS[n.cls].t}</dd>
@@ -784,12 +786,12 @@ function renderReadout(id){
 function edgeReadout(e,L){
   const box=document.getElementById('readout');const cn=CONN[e.conn]||CONN.lan;
   const cross=zoneOf(e.a)!==zoneOf(e.b);const dirTxt=e.dir==="<->"?"bidirectional":e.dir==="<-"?"reverse":"forward";
-  box.innerHTML=`<div class="ro-id" style="color:${L.color}">${L.organ.toUpperCase()} EDGE</div>
-    <div class="ro-name" style="font-size:17px">${CAT.nodes[e.a].l} → ${CAT.nodes[e.b].l}</div>
+  box.innerHTML=`<div class="ro-id" style="color:${L.color}">${escHtml(L.organ).toUpperCase()} EDGE</div>
+    <div class="ro-name" style="font-size:17px">${escHtml(CAT.nodes[e.a].l)} → ${escHtml(CAT.nodes[e.b].l)}</div>
     <dl class="ro-grid">
-      <dt>Protocol</dt><dd>${e.proto||"—"}</dd><dt>Port</dt><dd>${e.port||"—"}</dd>
+      <dt>Protocol</dt><dd>${escHtml(e.proto)||"—"}</dd><dt>Port</dt><dd>${escHtml(e.port)||"—"}</dd>
       <dt>Direction</dt><dd>${dirTxt}</dd><dt>Link</dt><dd>${cn.t}</dd>
-      <dt>Boundary</dt><dd>${cross?`<span style="color:var(--vascular)">⬥ crosses ${zoneOf(e.a)} → ${zoneOf(e.b)}</span>`:"within zone"}</dd>
+      <dt>Boundary</dt><dd>${cross?`<span style="color:var(--vascular)">⬥ crosses ${escHtml(zoneOf(e.a))} → ${escHtml(zoneOf(e.b))}</span>`:"within zone"}</dd>
     </dl>`;
 }
 
@@ -800,7 +802,7 @@ function clearTrace(){stack.classList.remove('trace-active');stack.querySelector
 function traceClick(k){
   if(!state.traceSrc){clearTrace();state.traceSrc=k;stack.classList.add('trace-active');
     stack.querySelectorAll(`[data-node="${k}"] .nodebox`).forEach(b=>b.classList.add('tpath','tsrc'));
-    document.getElementById('readout').innerHTML=`<div class="ro-id">TRACE</div><div class="ro-name">${CAT.nodes[k].l}</div><p class="ro-empty">Source set. Click a target to light the route across visible plates.</p>`;return;}
+    document.getElementById('readout').innerHTML=`<div class="ro-id">TRACE</div><div class="ro-name">${escHtml(CAT.nodes[k].l)}</div><p class="ro-empty">Source set. Click a target to light the route across visible plates.</p>`;return;}
   const path=bfs(state.traceSrc,k);
   if(!path){document.getElementById('readout').innerHTML=`<div class="ro-id">TRACE</div><div class="ro-name">No route</div><p class="ro-empty">No path on the visible plates. Enable more plates and retry.</p>`;state.traceSrc=null;return;}
   stack.querySelectorAll('.tpath,.tsrc,.tdst').forEach(e=>e.classList.remove('tpath','tsrc','tdst'));
@@ -808,8 +810,8 @@ function traceClick(k){
   stack.querySelectorAll(`[data-node="${path[0]}"] .nodebox`).forEach(b=>b.classList.add('tsrc'));
   stack.querySelectorAll(`[data-node="${path[path.length-1]}"] .nodebox`).forEach(b=>b.classList.add('tdst'));
   for(let i=0;i<path.length-1;i++){const a=path[i],b=path[i+1];stack.querySelectorAll(`.edge[data-a="${a}"][data-b="${b}"],.edge[data-a="${b}"][data-b="${a}"]`).forEach(e=>e.classList.add('tpath'));}
-  const hops=path.map((id,i)=>`<span style="color:var(--lymph)">${i+1}.</span> ${CAT.nodes[id].l}`).join('<span class="arrow">→</span>');
-  document.getElementById('readout').innerHTML=`<div class="ro-id">TRACE · ${path.length-1} HOPS</div><div class="ro-name" style="font-size:16px">${CAT.nodes[path[0]].l} → ${CAT.nodes[path[path.length-1]].l}</div><div class="hops">${hops}</div>`;
+  const hops=path.map((id,i)=>`<span style="color:var(--lymph)">${i+1}.</span> ${escHtml(CAT.nodes[id].l)}`).join('<span class="arrow">→</span>');
+  document.getElementById('readout').innerHTML=`<div class="ro-id">TRACE · ${path.length-1} HOPS</div><div class="ro-name" style="font-size:16px">${escHtml(CAT.nodes[path[0]].l)} → ${escHtml(CAT.nodes[path[path.length-1]].l)}</div><div class="hops">${hops}</div>`;
   state.traceSrc=null;state.traceLast={src:path[0],dst:path[path.length-1]};syncURL();
 }
 
@@ -882,12 +884,12 @@ function buildTitle(){
   top.style.background=col;bot.style.background=col;
   const tb=document.getElementById('titleblock');
   tb.classList.add('collapsed');
-  tb.innerHTML=`<div class="tt">${m.title||""}<span class="caret">▸</span></div><div class="tbbody"><b>${m.system||""}</b><br>v${m.version||"—"} · ${m.updated||""}<br>${m.author||""}<br>${m.classification||""}</div>`;
+  tb.innerHTML=`<div class="tt">${escHtml(m.title)}<span class="caret">▸</span></div><div class="tbbody"><b>${escHtml(m.system)}</b><br>v${escHtml(m.version)||"—"} · ${escHtml(m.updated)}<br>${escHtml(m.author)}<br>${escHtml(m.classification)}</div>`;
   tb.onclick=()=>{tb.classList.toggle('collapsed');tb.querySelector('.caret').textContent=tb.classList.contains('collapsed')?'▸':'▾';};
   const tc=document.getElementById('titlecard');
-  const revs=(m.revisions||[]).map(r=>`<div class="rv"><b>v${r.v}</b> · ${r.date} · ${r.who}<br>${r.note}</div>`).join('');
-  tc.innerHTML=`<div class="tt">${m.title||"Untitled"}</div>
-    <dl><dt>System</dt><dd>${m.system||"—"}</dd><dt>Version</dt><dd>${m.version||"—"}</dd><dt>Updated</dt><dd>${m.updated||"—"}</dd><dt>Author</dt><dd>${m.author||"—"}</dd><dt>Class</dt><dd>${m.classification||"—"}</dd></dl>
+  const revs=(m.revisions||[]).map(r=>`<div class="rv"><b>v${escHtml(r.v)}</b> · ${escHtml(r.date)} · ${escHtml(r.who)}<br>${escHtml(r.note)}</div>`).join('');
+  tc.innerHTML=`<div class="tt">${escHtml(m.title)||"Untitled"}</div>
+    <dl><dt>System</dt><dd>${escHtml(m.system)||"—"}</dd><dt>Version</dt><dd>${escHtml(m.version)||"—"}</dd><dt>Updated</dt><dd>${escHtml(m.updated)||"—"}</dd><dt>Author</dt><dd>${escHtml(m.author)||"—"}</dd><dt>Class</dt><dd>${escHtml(m.classification)||"—"}</dd></dl>
     <button class="revtoggle" id="revToggle">Revision log ▾</button><div class="revlog" id="revlog">${revs}</div>`;
   document.getElementById('revToggle').addEventListener('click',()=>{document.getElementById('revlog').classList.toggle('open');});
 }
@@ -896,7 +898,7 @@ function buildFinder(){
   const mk=(title,items,setName)=>{
     const h=document.createElement('h3');h.textContent=title;f.appendChild(h);
     const row=document.createElement('div');row.className="chips";
-    items.forEach(it=>{const sel=state.filter[setName].has(it.id);const c=document.createElement('button');c.className="fchip"+(sel?" sel":"");c.innerHTML=(it.c?`<i style="background:${it.c}"></i>`:"")+it.t;
+    items.forEach(it=>{const sel=state.filter[setName].has(it.id);const c=document.createElement('button');c.className="fchip"+(sel?" sel":"");c.innerHTML=(it.c?`<i style="background:${it.c}"></i>`:"")+escHtml(it.t);
       c.addEventListener('click',()=>{const S=state.filter[setName];S.has(it.id)?S.delete(it.id):S.add(it.id);c.classList.toggle('sel');applyFilter();syncURL();});row.appendChild(c);});
     f.appendChild(row);
   };
@@ -917,7 +919,7 @@ function buildLayerControls(){
   const lc=document.getElementById('layers');lc.innerHTML="";
   CAT.layers.forEach(L=>{if(!(L.id in state.layers))state.layers[L.id]=true;
     const b=document.createElement('button');b.className='layerbtn'+(state.layers[L.id]?' active':'');b.style.color=L.color;b.dataset.lid=L.id;
-    b.innerHTML=`<span class="swatch"></span><span class="meta"><span style="color:var(--ink)">${L.arch}</span><small>${L.organ.toUpperCase()}</small></span><span class="dot"></span>`;
+    b.innerHTML=`<span class="swatch"></span><span class="meta"><span style="color:var(--ink)">${escHtml(L.arch)}</span><small>${escHtml(L.organ).toUpperCase()}</small></span><span class="dot"></span>`;
     b.addEventListener('click',()=>toggleLayer(L.id));
     lc.appendChild(b);});
 }
@@ -925,7 +927,7 @@ function buildOverlayControls(){
   const oc=document.getElementById('overlays');oc.innerHTML="";
   const sect=t=>{const h=document.createElement('h3');h.textContent=t;h.style.margin="2px 0 4px";oc.appendChild(h);};
   const add=(o)=>{const b=document.createElement('button');b.className='layerbtn'+(state.overlays[o.id]?' active':'');b.style.color=o.c;
-    b.innerHTML=`<span class="swatch"></span><span class="meta"><span style="color:var(--ink)">${o.t}</span><small>${o.d}</small></span><span class="dot"></span>`;
+    b.innerHTML=`<span class="swatch"></span><span class="meta"><span style="color:var(--ink)">${escHtml(o.t)}</span><small>${escHtml(o.d)}</small></span><span class="dot"></span>`;
     b.addEventListener('click',()=>{state.overlays[o.id]=!state.overlays[o.id];b.classList.toggle('active',state.overlays[o.id]);applyOverlays();syncURL();});oc.appendChild(b);};
   sect("Boundaries");
   add({id:"zones",t:"Trust Zones",d:"Internet → sovereign bands",c:"var(--zone)"});
@@ -1065,11 +1067,11 @@ function runBlast(src){
   const reached=new Set(Object.keys(dist));
   const scopeHits=SCOPES.map(sc=>({t:sc.t,c:sc.c,n:[...reached].filter(k=>(CAT.nodes[k].scopes||[]).includes(sc.id)).length})).filter(x=>x.n);
   const flowsBroken=(CAT.flows||[]).filter(f=>f.steps.some(s=>reached.has(s)));
-  const scopeLine=scopeHits.length?scopeHits.map(x=>`<span style="color:${x.c}">●</span> ${x.t.split(' ')[0]} ${x.n}`).join(' &nbsp; '):'<span style="color:var(--muted)">none</span>';
-  document.getElementById('readout').innerHTML=`<div class="ro-id">BLAST RADIUS · ${src.toUpperCase()}</div><div class="ro-name" style="font-size:17px"><span style="color:#fff">${CAT.nodes[src].l}</span> + ${total} reachable</div>
+  const scopeLine=scopeHits.length?scopeHits.map(x=>`<span style="color:${x.c}">●</span> ${escHtml(x.t.split(' ')[0])} ${x.n}`).join(' &nbsp; '):'<span style="color:var(--muted)">none</span>';
+  document.getElementById('readout').innerHTML=`<div class="ro-id">BLAST RADIUS · ${src.toUpperCase()}</div><div class="ro-name" style="font-size:17px"><span style="color:#fff">${escHtml(CAT.nodes[src].l)}</span> + ${total} reachable</div>
     <dl class="ro-grid"><dt><span style="color:#ff5b66">●</span> 1 hop</dt><dd>${counts[1]}</dd><dt><span style="color:#ffb14d">●</span> 2 hops</dt><dd>${counts[2]}</dd><dt><span style="color:#34d6c0">●</span> 3+ hops</dt><dd>${counts[3]}</dd>
-    <dt>Scopes hit</dt><dd>${scopeLine}</dd><dt>Flows broken</dt><dd>${flowsBroken.length}${flowsBroken.length?': '+flowsBroken.map(f=>f.name).join('; '):''}</dd></dl>
-    <p class="ro-empty" style="margin-top:8px">Impact set if ${CAT.nodes[src].l} is lost or compromised, over the visible plates.</p>`;
+    <dt>Scopes hit</dt><dd>${scopeLine}</dd><dt>Flows broken</dt><dd>${flowsBroken.length}${flowsBroken.length?': '+escHtml(flowsBroken.map(f=>f.name).join('; ')):''}</dd></dl>
+    <p class="ro-empty" style="margin-top:8px">Impact set if ${escHtml(CAT.nodes[src].l)} is lost or compromised, over the visible plates.</p>`;
   syncURL();
 }
 
@@ -1105,8 +1107,8 @@ function showFlow(f,upto){
   const steps=f.steps.filter(s=>CAT.nodes[s]);const n=Math.min(upto||steps.length,steps.length);
   for(let i=0;i<n;i++){stack.querySelectorAll(`[data-node="${steps[i]}"] .nodebox`).forEach(b=>b.classList.add('fstep'));
     if(i>0){const a=steps[i-1],b=steps[i];stack.querySelectorAll(`.edge[data-a="${a}"][data-b="${b}"],.edge[data-a="${b}"][data-b="${a}"]`).forEach(e=>e.classList.add('fedge'));}}
-  const list=steps.slice(0,n).map((s,i)=>`<span style="color:var(--lymph)">${i+1}.</span> ${CAT.nodes[s].l}`).join('<span class="arrow">→</span>');
-  document.getElementById('readout').innerHTML=`<div class="ro-id">FLOW · ${steps.length} STEPS</div><div class="ro-name" style="font-size:16px">${f.name}</div><div class="hops">${list}</div>${f.note?`<p class="ro-empty" style="margin-top:8px">${f.note}</p>`:''}`;
+  const list=steps.slice(0,n).map((s,i)=>`<span style="color:var(--lymph)">${i+1}.</span> ${escHtml(CAT.nodes[s].l)}`).join('<span class="arrow">→</span>');
+  document.getElementById('readout').innerHTML=`<div class="ro-id">FLOW · ${steps.length} STEPS</div><div class="ro-name" style="font-size:16px">${escHtml(f.name)}</div><div class="hops">${list}</div>${f.note?`<p class="ro-empty" style="margin-top:8px">${escHtml(f.note)}</p>`:''}`;
 }
 function playFlow(f){
   const steps=f.steps.filter(s=>CAT.nodes[s]);
@@ -1225,10 +1227,10 @@ function openCatalogs(){
       const isActive=CATALOG_URL.endsWith(c.file);
       const card=document.createElement('div');
       card.className='ccard'+(isActive?' active':'');
-      card.innerHTML=`<div class="ccard-title">${c.title||c.file}
+      card.innerHTML=`<div class="ccard-title">${escHtml(c.title)||escHtml(c.file)}
         <span class="ccard-badge" style="color:${isActive?'var(--lymph)':'var(--muted)'}">${isActive?'● ACTIVE':'LOAD'}</span></div>
-        <div class="ccard-desc">${c.description||''}</div>
-        <div class="ccard-file">${c.file}</div>`;
+        <div class="ccard-desc">${escHtml(c.description)}</div>
+        <div class="ccard-file">${escHtml(c.file)}</div>`;
       const actions=document.createElement('div');
       actions.style.cssText='display:flex;gap:8px;margin-top:10px';
       if(!isActive){
@@ -1578,9 +1580,9 @@ function activateDiff(catB){
   applyTransform();
   // show summary in readout
   const mA=CAT.meta||{},mB=catB.meta||{};
-  const nList=(arr,c)=>arr.length?arr.map(x=>typeof x==="string"?`<span style="color:${c}">${x}</span>`:`<span style="color:${c}">${x.k}</span>`).join(', '):'<span style="color:var(--muted)">none</span>';
+  const nList=(arr,c)=>arr.length?arr.map(x=>typeof x==="string"?`<span style="color:${c}">${escHtml(x)}</span>`:`<span style="color:${c}">${escHtml(x.k)}</span>`).join(', '):'<span style="color:var(--muted)">none</span>';
   document.getElementById('readout').innerHTML=`<div class="ro-id" style="color:var(--lymph)">DIFF MODE</div>
-    <div class="ro-name" style="font-size:15px">${mA.title||'Current'} → ${mB.title||'Baseline'}</div>
+    <div class="ro-name" style="font-size:15px">${escHtml(mA.title)||'Current'} → ${escHtml(mB.title)||'Baseline'}</div>
     <div class="diff-panel">
       <div class="ds">
         <span class="dc" style="color:#57cb8b">+${diff.addedNodes.length} added</span>
@@ -1882,7 +1884,7 @@ function _buildTheaterPanel(k){
     {label:'Compliance',value:(n.scopes||[]).join(', ')||'—'},
   ];
   const grid=document.getElementById('tpGrid');
-  grid.innerHTML=cells.map(c=>`<dl class="tp-cell"><dt>${c.label}</dt><dd>${c.value}</dd></dl>`).join('');
+  grid.innerHTML=cells.map(c=>`<dl class="tp-cell"><dt>${c.label}</dt><dd>${escHtml(c.value)}</dd></dl>`).join('');
   // connected nodes
   const conns=[];
   CAT.layers.forEach(L=>{
@@ -1897,11 +1899,11 @@ function _buildTheaterPanel(k){
   const connDiv=document.getElementById('tpConn');
   if(uniq.length){
     connDiv.innerHTML=`<h3>${uniq.length} Connection${uniq.length>1?'s':''}</h3>
-      <div class="tp-conn-list">${uniq.map(c=>`<button class="tp-conn-item" data-peer="${c.peer}">
+      <div class="tp-conn-list">${uniq.map(c=>`<button class="tp-conn-item" data-peer="${escHtml(c.peer)}">
         <span class="tc-dir">${c.dir}</span>
-        <span>${c.label}</span>
-        <span style="font-size:9px;color:${c.color};opacity:.8">${c.layer}</span>
-        ${c.proto?`<span style="color:var(--muted);font-size:9px">${c.proto}</span>`:''}
+        <span>${escHtml(c.label)}</span>
+        <span style="font-size:9px;color:${c.color};opacity:.8">${escHtml(c.layer)}</span>
+        ${c.proto?`<span style="color:var(--muted);font-size:9px">${escHtml(c.proto)}</span>`:''}
       </button>`).join('')}</div>`;
     connDiv.querySelectorAll('[data-peer]').forEach(btn=>{
       btn.addEventListener('click',()=>enterTheater(btn.dataset.peer));
@@ -1935,7 +1937,7 @@ function _buildTheaterPanel(k){
         stroke="rgba(236,228,210,.25)" stroke-width="1" stroke-dasharray="3 4"/>`;
       if(e.proto){const mx=(pa.x+pb.x)/2,my=(pa.y+pb.y)/2;
         svgStr+=`<text x="${mx}" y="${my-4}" text-anchor="middle"
-          font-family="ui-monospace,monospace" font-size="8" fill="rgba(236,228,210,.45)">${e.proto}</text>`;}
+          font-family="ui-monospace,monospace" font-size="8" fill="rgba(236,228,210,.45)">${escHtml(e.proto)}</text>`;}
     });
     // nodes
     children.forEach(c=>{
@@ -1948,12 +1950,12 @@ function _buildTheaterPanel(k){
       if(c.type){svgStr+=`<rect x="${p.x-CW/2+6}" y="${p.y-CH/2+5}" width="${(c.type.length*5.5)+8}" height="12"
         rx="3" fill="${tc}" opacity=".18"/>
         <text x="${p.x-CW/2+10}" y="${p.y-CH/2+14}" font-family="ui-monospace,monospace"
-          font-size="8" fill="${tc}" opacity=".9">${c.type.toUpperCase()}</text>`;}
+          font-size="8" fill="${tc}" opacity=".9">${escHtml(c.type).toUpperCase()}</text>`;}
       svgStr+=`<text x="${p.x}" y="${p.y+2}" text-anchor="middle"
         font-family="system-ui,sans-serif" font-size="11" font-weight="500"
-        fill="rgba(236,228,210,.92)">${c.l}</text>`;
+        fill="rgba(236,228,210,.92)">${escHtml(c.l)}</text>`;
       if(c.addr){svgStr+=`<text x="${p.x}" y="${p.y+16}" text-anchor="middle"
-        font-family="ui-monospace,monospace" font-size="9" fill="rgba(236,228,210,.45)">${c.addr}</text>`;}
+        font-family="ui-monospace,monospace" font-size="9" fill="rgba(236,228,210,.45)">${escHtml(c.addr)}</text>`;}
     });
     svgStr+=`</svg>`;
     connDiv.innerHTML+=`<div style="margin-top:16px">
@@ -1976,7 +1978,8 @@ function rebuild(){SCOPES=(CAT.meta&&Array.isArray(CAT.meta.scopes)&&CAT.meta.sc
 async function boot(){
   try{const r=await fetch(CATALOG_URL,{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.nodes&&j.layers&&j.zones){CAT=normalize(j);catSource=CATALOG_URL;}}}catch(e){}
   const _diffParam=new URLSearchParams(location.search).get("diff");
-  if(_diffParam){try{const dr=await fetch(_diffParam.includes("/")?_diffParam:"catalogs/"+_diffParam,{cache:"no-store"});if(dr.ok){const dj=await dr.json();if(dj&&dj.nodes&&dj.layers&&dj.zones){const nd=normalize(dj);if(!nd.meta)nd.meta={};nd.meta._srcFile=_diffParam;state._pendDiff=nd;}}}catch(e){}}
+  const _diffUrl=resolveCatalogParam(_diffParam);
+  if(_diffUrl){try{const dr=await fetch(_diffUrl,{cache:"no-store"});if(dr.ok){const dj=await dr.json();if(dj&&dj.nodes&&dj.layers&&dj.zones){const nd=normalize(dj);if(!nd.meta)nd.meta={};nd.meta._srcFile=_diffParam;state._pendDiff=nd;}}}catch(e){}}
   parseHash();
   rebuild();
   syncPresets();
