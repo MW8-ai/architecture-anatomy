@@ -1,6 +1,6 @@
 // Architecture Anatomy — service worker
 // Cache-first for app shell; network-first for catalogs.
-const CACHE = 'anatomy-v1.7.3';
+const CACHE = 'anatomy-v1.7.4';
 const SHELL = [
   './',
   './index.html',
