@@ -61,3 +61,7 @@ Every phase = version bump + CHANGELOG + sw.js cache bump together (release ritu
 
 ## 6. Prior-art honesty (for the README someday)
 Plenty of tools draw networks in 3D or auto-map infrastructure. The defensible combination here: **catalog-as-code driving flat + 3D from one file, a deterministic sovereign-boundary validation engine, and an AI advisor that can only cite verified findings.** That trio is the pitch — not "3D diagrams."
+## 2026-07-08 — device: phone/termux — model: Fable 5 — commit: dbe2014
+Did: v1.8.0 — 3D promoted to main, atlas.html preserved, search/zones/deep-links/dedupe, SWR worker (cache saga structurally ended), redirect stub. Shipped entirely from a phone.
+Learned: Pages Actions-mode-without-workflow = frozen deploys; cache-first SW = eternal staleness; em dashes are CP1252 string injection; the gates caught everyone including the AI.
+Next: hover edge-highlighting, Trace 2.0 deterministic core, Playwright smoke.
