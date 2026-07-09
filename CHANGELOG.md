@@ -2,6 +2,24 @@
 
 All notable changes to Architecture Anatomy.
 
+## v1.8.0
+- **3D promoted to main view.** 2D atlas preserved at atlas.html; views cross-link. Redirect stub at old 3D URL.
+- Search-to-focus, zone labels on base plane, deep links (?cat= &node= &flow=), picker dedupe.
+- **Stale-while-revalidate service worker** — site never more than one visit stale; cache bumps demoted to safety net.
+
+## v1.7.4
+- Live REV (VIEW_VERSION) in the 3D title block — deployed version verifiable on sight. SW cache bump.
+
+## v1.7.3
+- SW cache bump forcing client refresh after the frozen-Pages incident.
+
+## v1.7.2
+- 3D v2 lands: repo-integrated catalog picker, mobile pinch/orbit gestures, starfield + flybys, shape vocabulary (walls/drums/gems/containers), front-facing default camera.
+- Title -> "Visual Atlas"; catalog-index CI smoke check; explicit Pages deploy workflow (site had been frozen at first deploy).
+
+## v1.7.1
+- Unified README (Cornerstone cross-links, live links); install-button duplication guard; Sovereign Sample path fix; FEATURE-LEDGER.md; removed pack debris.
+
 ## v1.7.0
 - **Public release.** Environment-specific default catalog removed; generic starter stub in its place. Real-topology catalogs relocated to a private sibling repo, enforced by a CI fingerprint gate (`scripts/sanitize-check.sh`).
 - **Phase A validation engine** (`lib/validate.js`): unmet requires/provides, transitive blast radius, sovereign boundary path checks. Renderer-agnostic; legacy catalogs validate untouched. 7 tests in `test/`.
