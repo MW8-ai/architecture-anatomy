@@ -1,9 +1,11 @@
 // Architecture Anatomy — service worker
-// Cache-first for app shell; network-first for catalogs.
-const CACHE = 'anatomy-v1.7.4';
+// Stale-while-revalidate for app shell; network-first for catalogs.
+const CACHE = 'anatomy-v1.8.0';
 const SHELL = [
   './',
   './index.html',
+  './atlas.html',
+  './3d-prototype.html',
   './tools/svg-renderer.js',
   './manifest.json'
 ];
@@ -37,17 +39,18 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // Cache-first for everything else (app shell, tools)
+  // Stale-while-revalidate: serve cached instantly, refresh in background.
+  // Never more than one visit stale; cache bumps are now safety net, not steering wheel.
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(r => {
+      const net = fetch(e.request).then(r => {
         if (r.ok && e.request.method === 'GET') {
           const clone = r.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return r;
-      });
+      }).catch(() => cached);
+      return cached || net;
     })
   );
 });

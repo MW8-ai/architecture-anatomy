@@ -6,7 +6,7 @@
 
 > Interactive network anatomy — one catalog file drives a layered 2D atlas, an exploded 3D view, and a sovereign-boundary validation engine. **One body, many systems.**
 
-**[Live atlas →](https://mw8-ai.github.io/architecture-anatomy/)** &nbsp;|&nbsp; **[Exploded 3D →](https://mw8-ai.github.io/architecture-anatomy/3d-prototype.html)** &nbsp;|&nbsp; **[Report an issue →](https://github.com/MW8-ai/architecture-anatomy/issues)**
+**[Live 3D →](https://mw8-ai.github.io/architecture-anatomy/)** &nbsp;|&nbsp; **[2D Atlas →](https://mw8-ai.github.io/architecture-anatomy/atlas.html)** &nbsp;|&nbsp; **[Report an issue →](https://github.com/MW8-ai/architecture-anatomy/issues)**
 
 ---
 
@@ -22,8 +22,8 @@ A catalog-as-code network visualizer for architects: describe the estate once in
 
 | View | Purpose | Where |
 |---|---|---|
-| **2D Atlas** | Plates, trace, blast, diff, Mermaid/SVG export — the working document | [`index.html`](https://mw8-ai.github.io/architecture-anatomy/) |
-| **Exploded 3D** | Layers as planes, cross-plane spines, click-to-dive inspection, shape vocabulary (firewalls as brick walls, translucent cluster containers), pinch/orbit on mobile | [`3d-prototype.html`](https://mw8-ai.github.io/architecture-anatomy/3d-prototype.html) — deep-linkable via `?cat=<catalog>.json` |
+| **2D Atlas** | Plates, trace, blast, diff, Mermaid/SVG export — the working document | [`atlas.html`](https://mw8-ai.github.io/architecture-anatomy/atlas.html) |
+| **Exploded 3D** | Layers as planes, cross-plane spines, click-to-dive inspection, shape vocabulary (firewalls as brick walls, translucent cluster containers), pinch/orbit on mobile | [`index.html`](https://mw8-ai.github.io/architecture-anatomy/) — the main view; deep-linkable via `?cat=` `&node=` `&flow=` |
 
 Both render the same `catalogs/*.json`. Change the data, both views follow.
 
