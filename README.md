@@ -55,10 +55,15 @@ Writing your own: nodes carry optional `type` (drives 3D shapes), `requires`/`pr
 
 CI runs a fingerprint gate (`scripts/sanitize-check.sh`) and the engine tests on every push — real-environment topologies live in a private sibling repo and can't come back without the build going red.
 
+<!-- cornerstone-method:start -->
+
 ---
 
 ## Part of the Cornerstone Method
 
-**Know → Define → Assess → Shape → Verify → Visualize.** CloudIntelMatrix is the **Know** verb — verified capability and compliance facts feed every downstream decision.
+**Know → Define → Assess → Shape → Verify → Visualize.** Architecture Anatomy is the **Visualize** verb — the interactive layered atlas — the drawing you review before anything gets built.
 
-Siblings: [Architecture Anatomy](https://github.com/MW8-ai/architecture-anatomy) (Visualize — [live atlas](https://mw8-ai.github.io/architecture-anatomy/) · [exploded 3D](https://mw8-ai.github.io/architecture-anatomy/3d-prototype.html)) · Architect's Cornerstone (Define) · Architecture Review Framework + Review Skill (Assess) · Formwork (Shape) · Plumbline (Verify)
+Siblings: [CloudIntelMatrix](https://github.com/MW8-ai/CloudIntelMatrix) (Know — [live matrix](https://mw8-ai.github.io/CloudIntelMatrix/)) · [Architect's Cornerstone](https://github.com/MW8-ai/architects-cornerstone) (Define) · [Architecture Review Framework](https://github.com/MW8-ai/AI-Cloud-Architect-Framework) (Assess) · [Formwork](https://github.com/MW8-ai/formwork) (Shape) · [Plumbline](https://github.com/MW8-ai/plumbline) (Verify)
+
+Method hub: [MW8-ai/cornerstone-method](https://github.com/MW8-ai/cornerstone-method)
+<!-- cornerstone-method:end -->
