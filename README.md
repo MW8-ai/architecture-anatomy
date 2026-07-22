@@ -59,11 +59,12 @@ CI runs a fingerprint gate (`scripts/sanitize-check.sh`) and the engine tests on
 
 ---
 
+<!-- CORNERSTONE-BLOCK:BEGIN (managed by cornerstone-method/scripts/stamp.py - do not edit by hand) -->
 ## Part of the Cornerstone Method
 
-**Know → Define → Assess → Shape → Verify → Visualize.** Architecture Anatomy is the **Visualize** verb — the interactive layered atlas — the drawing you review before anything gets built.
+**Know → Define → Assess → Shape → Verify → Visualize → Record.** **Architecture Anatomy** is the **Visualize** verb - Interactive layered network atlas with a 3D exploded view. Catalog-driven, validation-aware, boundary-crossing edges made visible.
 
-Siblings: [CloudIntelMatrix](https://github.com/MW8-ai/CloudIntelMatrix) (Know — [live matrix](https://mw8-ai.github.io/CloudIntelMatrix/)) · [Architect's Cornerstone](https://github.com/MW8-ai/architects-cornerstone) (Define) · [Architecture Review Framework](https://github.com/MW8-ai/AI-Cloud-Architect-Framework) (Assess) · [Formwork](https://github.com/MW8-ai/formwork) (Shape) · [Plumbline](https://github.com/MW8-ai/plumbline) (Verify)
+Siblings: [CloudIntelMatrix (Know)](https://github.com/MW8-ai/CloudIntelMatrix) ([live](https://mw8-ai.github.io/CloudIntelMatrix/)) · Architect's Cornerstone (Define) · Architecture Review Framework + Review Skill (Assess) · [Formwork (Shape)](https://github.com/MW8-ai/formwork) · [Plumbline (Verify)](https://github.com/MW8-ai/plumbline) · Ledger (Record)
 
-Method hub: [MW8-ai/cornerstone-method](https://github.com/MW8-ai/cornerstone-method)
-<!-- cornerstone-method:end -->
+Hub: [The Cornerstone Method](https://github.com/MW8-ai/cornerstone-method)
+<!-- CORNERSTONE-BLOCK:END -->
