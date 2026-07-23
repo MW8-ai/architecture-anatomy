@@ -142,6 +142,12 @@
   .tierbar{opacity:0;transition:opacity .25s}
   .eoldot{opacity:0;transition:opacity .25s}
   .stack.show-eol .eoldot{opacity:1}
+  .govring,.govdot{opacity:0;transition:opacity .25s}
+  .stack.show-gov .govring{opacity:.95}
+  .stack.show-gov .govdot{opacity:1}
+  .stack.show-gov .govring.govfail{animation:govpulse 1.6s ease-in-out infinite}
+  @keyframes govpulse{0%,100%{opacity:.95}50%{opacity:.4}}
+  @media (prefers-reduced-motion: reduce){.stack.show-gov .govring.govfail{animation:none}}
 
   .rail{position:sticky;top:14px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 28px);overflow:auto}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 14px 16px;backdrop-filter:blur(6px)}
@@ -509,7 +515,7 @@
 <script src="lib/resolve-catalog-param.js"></script>
 <script>
 const NS="http://www.w3.org/2000/svg";const VB={w:1040,h:720};
-const APP_VERSION="v1.8.1";
+const APP_VERSION="v1.9.0";
 const escHtml=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 // ====================== SINGLE SOURCE OF TRUTH ======================
@@ -547,7 +553,7 @@ let catSource="embedded default";
 const _catParam=new URLSearchParams(location.search).get("catalog");
 const CATALOG_URL=resolveCatalogParam(_catParam)||"catalogs/zero-trust-access.json";
 const BW=128,BH=46;
-const state={layers:{},overlays:{zones:true,cls:false,NIST:false,HIPAA:false,ATO:false,cross:false,elabels:false,eol:false,tier:false,resilience:false,rporto:false},
+const state={layers:{},overlays:{zones:true,cls:false,NIST:false,HIPAA:false,ATO:false,cross:false,elabels:false,eol:false,tier:false,resilience:false,rporto:false,gov:false},
   peel:0,peelTarget:0,pinned:null,rotX:0,rotY:0,zoom:1,panx:0,pany:0,
   trace:false,blast:false,traceSrc:null,blastSrc:null,traceLast:null,flowActive:false,flowTimer:null,
   _pendBlast:null,_pendTrace:null,filter:{text:"",cls:new Set(),scope:new Set(),tier:new Set()},
@@ -572,6 +578,15 @@ function eolStatus(eol){
   if(days<=180)return{c:"var(--eol-amber)",t:"EOL in "+days+"d ("+eol+")"};
   return{c:"var(--eol-green)",t:"EOL "+eol+" ("+days+"d)"};
 }
+
+const GOV_STATUS={
+  pass:{c:"var(--eol-green)",t:"pass"},
+  warn:{c:"var(--eol-amber)",t:"warn"},
+  fail:{c:"var(--eol-red)",t:"fail"},
+  unknown:{c:"#7c8694",t:"unknown"}
+};
+const govOf=n=>n.gov&&GOV_STATUS[n.gov.status]?n.gov:null;
+const hasGovData=()=>!!(CAT.meta&&CAT.meta.governance)||Object.keys(CAT.nodes).some(k=>CAT.nodes[k].gov);
 
 const ICONS={
   cloud:"M4 11.5 a3 3 0 0 1 0.5 -5.95 a4 4 0 0 1 7.5 1 a2.5 2.5 0 0 1 -0.5 4.95 z",
@@ -651,6 +666,11 @@ function buildBase(){
     // eol dot (top-right corner)
     const st=eolStatus(n.eol);
     g.appendChild(el("circle",{cx:n.x+BW/2-7,cy:n.y-BH/2+7,r:5,fill:st.c,stroke:"#0a0e14","stroke-width":1.4,class:"eoldot"}));
+    // governance stain (adapter v0.1): ring + corner dot colored by gov.status
+    const gv=govOf(n);
+    if(gv){const gc=GOV_STATUS[gv.status];
+      g.appendChild(el("rect",{x:n.x-BW/2-3,y:n.y-BH/2-3,width:BW+6,height:BH+6,rx:11,fill:"none",stroke:gc.c,"stroke-width":2,class:"govring"+(gv.status==="fail"?" govfail":"")}));
+      g.appendChild(el("circle",{cx:n.x+BW/2-7,cy:n.y+BH/2-7,r:5,fill:gc.c,stroke:"#0a0e14","stroke-width":1.4,class:"govdot"}));}
     s.appendChild(g);
   }
   page.appendChild(s);stack.appendChild(page);
@@ -779,7 +799,12 @@ function renderReadout(id){
       <dt>Criticality</dt><dd><span style="color:${tc.c}">●</span> T${n.tier} · ${tc.t}</dd>
       <dt>Lifecycle</dt><dd><span style="color:${st.c}">●</span> ${st.t}</dd>
       <dt>Data class</dt><dd><span style="color:${CLS[n.cls].c}">●</span> ${CLS[n.cls].t}</dd>
-      <dt>Scope</dt><dd>${sc}</dd>
+      <dt>Scope</dt><dd>${sc}</dd>${(()=>{const gv=govOf(n);if(!gv)return '';
+        const gc=GOV_STATUS[gv.status];
+        const failing=Object.entries(gv.gates||{}).filter(([,v])=>v!=='pass').map(([g,v])=>`${escHtml(g)}: ${escHtml(v)}`);
+        const detail=failing.length?failing.join('<br>'):(gv.status==='pass'?'all gates pass':'no gate detail');
+        const asOf=gv.asOf?` · ${escHtml(String(gv.asOf).slice(0,10))}`:'';
+        return `<dt>Governance</dt><dd><span style="color:${gc.c}">●</span> ${gc.t}${gv.source?` · ${escHtml(gv.source)}`:''}${asOf}<br><span style="color:var(--muted)">${detail}</span></dd>`;})()}
       <dt>Plates</dt><dd><div class="ro-planes">${pill||'<span style="color:var(--muted)">structural only</span>'}</div></dd>
     </dl>`;
 }
@@ -852,6 +877,7 @@ function applyOverlays(){
   stack.classList.toggle('show-tier',state.overlays.tier);
   stack.classList.toggle('show-resilience',state.overlays.resilience);
   stack.classList.toggle('show-rporto',state.overlays.rporto);
+  stack.classList.toggle('show-gov',state.overlays.gov);
   if(state.overlays.resilience)computeAndMarkSPOFs();
   else stack.querySelectorAll('.nodebox.spof').forEach(el=>el.classList.remove('spof'));
 }
@@ -884,12 +910,13 @@ function buildTitle(){
   top.style.background=col;bot.style.background=col;
   const tb=document.getElementById('titleblock');
   tb.classList.add('collapsed');
-  tb.innerHTML=`<div class="tt">${escHtml(m.title)}<span class="caret">▸</span></div><div class="tbbody"><b>${escHtml(m.system)}</b><br>v${escHtml(m.version)||"—"} · ${escHtml(m.updated)}<br>${escHtml(m.author)}<br>${escHtml(m.classification)}</div>`;
+  const gvline=m.governance&&m.governance.asOf?`<br><span style="color:var(--eol-green)">⏚</span> gov as of ${escHtml(String(m.governance.asOf).slice(0,10))}${m.governance.generatedBy?` · ${escHtml(m.governance.generatedBy)}`:''}`:"";
+  tb.innerHTML=`<div class="tt">${escHtml(m.title)}<span class="caret">▸</span></div><div class="tbbody"><b>${escHtml(m.system)}</b><br>v${escHtml(m.version)||"—"} · ${escHtml(m.updated)}<br>${escHtml(m.author)}<br>${escHtml(m.classification)}${gvline}</div>`;
   tb.onclick=()=>{tb.classList.toggle('collapsed');tb.querySelector('.caret').textContent=tb.classList.contains('collapsed')?'▸':'▾';};
   const tc=document.getElementById('titlecard');
   const revs=(m.revisions||[]).map(r=>`<div class="rv"><b>v${escHtml(r.v)}</b> · ${escHtml(r.date)} · ${escHtml(r.who)}<br>${escHtml(r.note)}</div>`).join('');
   tc.innerHTML=`<div class="tt">${escHtml(m.title)||"Untitled"}</div>
-    <dl><dt>System</dt><dd>${escHtml(m.system)||"—"}</dd><dt>Version</dt><dd>${escHtml(m.version)||"—"}</dd><dt>Updated</dt><dd>${escHtml(m.updated)||"—"}</dd><dt>Author</dt><dd>${escHtml(m.author)||"—"}</dd><dt>Class</dt><dd>${escHtml(m.classification)||"—"}</dd></dl>
+    <dl><dt>System</dt><dd>${escHtml(m.system)||"—"}</dd><dt>Version</dt><dd>${escHtml(m.version)||"—"}</dd><dt>Updated</dt><dd>${escHtml(m.updated)||"—"}</dd><dt>Author</dt><dd>${escHtml(m.author)||"—"}</dd><dt>Class</dt><dd>${escHtml(m.classification)||"—"}</dd>${m.governance?`<dt>Gov as of</dt><dd>${escHtml(String(m.governance.asOf||"—").slice(0,10))}${m.governance.failing&&m.governance.failing.length?` · <span style="color:var(--eol-red)">${m.governance.failing.length} failing</span>`:""}</dd>`:""}</dl>
     <button class="revtoggle" id="revToggle">Revision log ▾</button><div class="revlog" id="revlog">${revs}</div>`;
   document.getElementById('revToggle').addEventListener('click',()=>{document.getElementById('revlog').classList.toggle('open');});
 }
@@ -937,6 +964,10 @@ function buildOverlayControls(){
   SCOPES.forEach(s=>add({id:s.id,t:s.t+" scope",d:"compliance boundary ring",c:s.c}));
   sect("Network");
   add({id:"elabels",t:"Edge Labels",d:"protocol + port on connections",c:"var(--lymph)"});
+  if(hasGovData()){
+    sect("Governance");
+    add({id:"gov",t:"Governance Status",d:"Plumbline verdicts — pass · warn · fail",c:"var(--eol-green)"});
+  }
   sect("Resilience");
   add({id:"resilience",t:"Single Points of Failure",d:"articulation points — removal disconnects the graph",c:"var(--eol-red)"});
   add({id:"rporto",t:"RPO / RTO Labels",d:"recovery time annotations on replication edges",c:"var(--lymph)"});

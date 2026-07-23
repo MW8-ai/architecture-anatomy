@@ -1,0 +1,786 @@
+{
+  "meta": {
+    "title": "Zero-Trust Network Access",
+    "system": "Enterprise ZTNA Reference",
+    "version": "1.0",
+    "author": "Architecture",
+    "updated": "2026-06-23",
+    "classification": "",
+    "revisions": [
+      {
+        "v": "1.0",
+        "date": "2026-06-23",
+        "who": "Architecture",
+        "note": "Initial baseline. Identity-centric perimeter; no implicit trust by network position."
+      }
+    ],
+    "governance": {
+      "generatedBy": "plumbline_to_anatomy",
+      "asOf": "2026-07-23T05:52:48+00:00",
+      "sources": [
+        "corp-app",
+        "dev-env",
+        "siem-pipeline",
+        "ztna-proxy"
+      ],
+      "annotated": 6,
+      "failing": [
+        "dev_env"
+      ]
+    },
+    "scopes": [
+      {
+        "id": "GOV",
+        "t": "Governance: failing gates",
+        "c": "#e05252"
+      }
+    ]
+  },
+  "zones": [
+    {
+      "t": "Internet · Untrusted",
+      "y0": 18,
+      "y1": 108
+    },
+    {
+      "t": "Device & Identity Plane",
+      "y0": 108,
+      "y1": 230
+    },
+    {
+      "t": "Policy Enforcement",
+      "y0": 230,
+      "y1": 350
+    },
+    {
+      "t": "Protected Resources",
+      "y0": 350,
+      "y1": 510
+    },
+    {
+      "t": "Monitoring & SOC",
+      "y0": 510,
+      "y1": 630
+    },
+    {
+      "t": "Resilience",
+      "y0": 630,
+      "y1": 702
+    }
+  ],
+  "nodes": {
+    "rmt_usr": {
+      "x": 160,
+      "y": 62,
+      "l": "Remote Users",
+      "zone": "Internet · Untrusted",
+      "host": "—",
+      "cls": "pub",
+      "tier": 3,
+      "eol": null,
+      "icon": "users"
+    },
+    "mob_usr": {
+      "x": 400,
+      "y": 62,
+      "l": "Mobile Devices",
+      "zone": "Internet · Untrusted",
+      "host": "—",
+      "cls": "pub",
+      "tier": 3,
+      "eol": null,
+      "icon": "generic"
+    },
+    "ptnr": {
+      "x": 640,
+      "y": 62,
+      "l": "Partner / B2B",
+      "zone": "Internet · Untrusted",
+      "host": "—",
+      "cls": "pub",
+      "tier": 3,
+      "eol": null,
+      "icon": "users"
+    },
+    "branch": {
+      "x": 880,
+      "y": 62,
+      "l": "Branch Workers",
+      "zone": "Internet · Untrusted",
+      "host": "SD-WAN",
+      "cls": "int",
+      "tier": 2,
+      "eol": null,
+      "icon": "users"
+    },
+    "entra": {
+      "x": 260,
+      "y": 168,
+      "l": "Entra ID / IdP",
+      "zone": "Device & Identity Plane",
+      "host": "Microsoft cloud",
+      "cls": "conf",
+      "tier": 1,
+      "eol": null,
+      "icon": "identity",
+      "children": [
+        {
+          "id": "dir_users",
+          "l": "User Directory",
+          "type": "service",
+          "cls": "conf"
+        },
+        {
+          "id": "dir_groups",
+          "l": "Groups & Roles",
+          "type": "service",
+          "cls": "conf"
+        },
+        {
+          "id": "dir_apps",
+          "l": "App Registrations",
+          "type": "service",
+          "cls": "reg"
+        },
+        {
+          "id": "dir_b2b",
+          "l": "B2B Guest",
+          "type": "zone",
+          "cls": "pub"
+        },
+        {
+          "id": "dir_pim",
+          "l": "PIM Roles",
+          "type": "service",
+          "cls": "reg"
+        }
+      ],
+      "childEdges": [
+        {
+          "a": "dir_users",
+          "b": "dir_groups",
+          "proto": "membership"
+        },
+        {
+          "a": "dir_groups",
+          "b": "dir_apps",
+          "proto": "assignment"
+        },
+        {
+          "a": "dir_pim",
+          "b": "dir_groups",
+          "proto": "elevates"
+        }
+      ]
+    },
+    "intune": {
+      "x": 520,
+      "y": 168,
+      "l": "Device Compliance",
+      "zone": "Device & Identity Plane",
+      "host": "Intune / MDM",
+      "cls": "conf",
+      "tier": 1,
+      "eol": null,
+      "icon": "generic"
+    },
+    "ca_pol": {
+      "x": 780,
+      "y": 168,
+      "l": "Conditional Access",
+      "zone": "Device & Identity Plane",
+      "host": "Entra CA engine",
+      "cls": "reg",
+      "tier": 1,
+      "eol": null,
+      "icon": "network"
+    },
+    "ztna_px": {
+      "x": 260,
+      "y": 290,
+      "l": "ZTNA Proxy Cluster",
+      "zone": "Policy Enforcement",
+      "host": "cloud-POP",
+      "cls": "conf",
+      "tier": 1,
+      "eol": null,
+      "icon": "network",
+      "children": [
+        {
+          "id": "px_us",
+          "l": "POP US-East",
+          "type": "zone",
+          "cls": "int",
+          "addr": "52.x.x.x"
+        },
+        {
+          "id": "px_eu",
+          "l": "POP EU-West",
+          "type": "zone",
+          "cls": "int",
+          "addr": "13.x.x.x"
+        },
+        {
+          "id": "px_ap",
+          "l": "POP AP-SE",
+          "type": "zone",
+          "cls": "int",
+          "addr": "54.x.x.x"
+        },
+        {
+          "id": "px_pol",
+          "l": "Policy Engine",
+          "type": "service",
+          "cls": "conf"
+        },
+        {
+          "id": "px_tun",
+          "l": "TLS Tunnel",
+          "type": "service",
+          "cls": "conf",
+          "addr": "mTLS 1.3"
+        }
+      ],
+      "childEdges": [
+        {
+          "a": "px_pol",
+          "b": "px_us",
+          "proto": "enforce"
+        },
+        {
+          "a": "px_pol",
+          "b": "px_eu",
+          "proto": "enforce"
+        },
+        {
+          "a": "px_pol",
+          "b": "px_ap",
+          "proto": "enforce"
+        },
+        {
+          "a": "px_tun",
+          "b": "px_pol",
+          "proto": "decrypt→inspect"
+        }
+      ],
+      "gov": {
+        "status": "pass",
+        "fails": 0,
+        "warns": 0,
+        "gates": {
+          "secrets": "pass",
+          "workflow_audit": "pass",
+          "dependency_cves": "pass",
+          "project_pack": "pass"
+        },
+        "source": "ztna-proxy",
+        "asOf": "2026-07-23T05:52:48+00:00"
+      }
+    },
+    "mfa_gw": {
+      "x": 520,
+      "y": 290,
+      "l": "Phish-Resist MFA",
+      "zone": "Policy Enforcement",
+      "host": "FIDO2 / passkey",
+      "cls": "conf",
+      "tier": 1,
+      "eol": null,
+      "icon": "identity",
+      "gov": {
+        "status": "pass",
+        "fails": 0,
+        "warns": 0,
+        "gates": {
+          "secrets": "pass",
+          "workflow_audit": "pass",
+          "dependency_cves": "pass",
+          "project_pack": "pass"
+        },
+        "source": "ztna-proxy",
+        "asOf": "2026-07-23T05:52:48+00:00"
+      }
+    },
+    "pam": {
+      "x": 780,
+      "y": 290,
+      "l": "PAM · Priv Vault",
+      "zone": "Policy Enforcement",
+      "host": "dedicated VM",
+      "cls": "reg",
+      "tier": 1,
+      "eol": null,
+      "icon": "identity",
+      "children": [
+        {
+          "id": "pam_creds",
+          "l": "Cred Vault",
+          "type": "volume",
+          "cls": "reg"
+        },
+        {
+          "id": "pam_sess",
+          "l": "Session Proxy",
+          "type": "service",
+          "cls": "reg"
+        },
+        {
+          "id": "pam_rec",
+          "l": "Session Record",
+          "type": "storage",
+          "cls": "reg"
+        },
+        {
+          "id": "pam_just",
+          "l": "Just-in-Time",
+          "type": "service",
+          "cls": "reg"
+        }
+      ],
+      "childEdges": [
+        {
+          "a": "pam_just",
+          "b": "pam_creds",
+          "proto": "releases"
+        },
+        {
+          "a": "pam_sess",
+          "b": "pam_rec",
+          "proto": "records"
+        },
+        {
+          "a": "pam_creds",
+          "b": "pam_sess",
+          "proto": "injects"
+        }
+      ]
+    },
+    "corp_app": {
+      "x": 160,
+      "y": 430,
+      "l": "Corp Applications",
+      "zone": "Protected Resources",
+      "host": "on-prem / IaaS",
+      "cls": "conf",
+      "tier": 2,
+      "eol": null,
+      "icon": "server",
+      "gov": {
+        "status": "warn",
+        "fails": 0,
+        "warns": 1,
+        "gates": {
+          "secrets": "pass",
+          "workflow_audit": "warn",
+          "dependency_cves": "pass",
+          "project_pack": "pass"
+        },
+        "source": "corp-app",
+        "asOf": "2026-07-23T05:52:48+00:00"
+      }
+    },
+    "dev_env": {
+      "x": 420,
+      "y": 430,
+      "l": "Dev & CI Pipeline",
+      "zone": "Protected Resources",
+      "host": "IaaS",
+      "cls": "int",
+      "tier": 3,
+      "eol": null,
+      "icon": "server",
+      "gov": {
+        "status": "fail",
+        "fails": 2,
+        "warns": 1,
+        "gates": {
+          "secrets": "pass",
+          "workflow_audit": "fail",
+          "dependency_cves": "fail",
+          "threat_model": "warn",
+          "project_pack": "pass"
+        },
+        "source": "dev-env",
+        "asOf": "2026-07-23T05:52:48+00:00"
+      },
+      "scopes": [
+        "GOV"
+      ]
+    },
+    "fin_sys": {
+      "x": 650,
+      "y": 430,
+      "l": "Finance & Payroll",
+      "zone": "Protected Resources",
+      "host": "SaaS / IaaS",
+      "cls": "reg",
+      "tier": 1,
+      "eol": null,
+      "icon": "server"
+    },
+    "db_core": {
+      "x": 880,
+      "y": 430,
+      "l": "Core DB Cluster",
+      "zone": "Protected Resources",
+      "host": "on-prem physical",
+      "cls": "reg",
+      "tier": 1,
+      "eol": null,
+      "icon": "db"
+    },
+    "siem": {
+      "x": 280,
+      "y": 570,
+      "l": "SIEM · Log Agg",
+      "zone": "Monitoring & SOC",
+      "host": "cloud SIEM",
+      "cls": "conf",
+      "tier": 1,
+      "eol": null,
+      "icon": "storage",
+      "gov": {
+        "status": "pass",
+        "fails": 0,
+        "warns": 0,
+        "gates": {
+          "secrets": "pass",
+          "schema_drift": "pass",
+          "project_pack": "pass"
+        },
+        "source": "siem-pipeline",
+        "asOf": "2026-07-23T05:52:48+00:00"
+      }
+    },
+    "xdr": {
+      "x": 560,
+      "y": 570,
+      "l": "EDR / XDR",
+      "zone": "Monitoring & SOC",
+      "host": "SaaS agent",
+      "cls": "conf",
+      "tier": 1,
+      "eol": null,
+      "icon": "generic",
+      "gov": {
+        "status": "pass",
+        "fails": 0,
+        "warns": 0,
+        "gates": {
+          "secrets": "pass",
+          "schema_drift": "pass",
+          "project_pack": "pass"
+        },
+        "source": "siem-pipeline",
+        "asOf": "2026-07-23T05:52:48+00:00"
+      }
+    },
+    "ir_team": {
+      "x": 840,
+      "y": 570,
+      "l": "IR · SOC Analysts",
+      "zone": "Monitoring & SOC",
+      "host": "—",
+      "cls": "conf",
+      "tier": 2,
+      "eol": null,
+      "icon": "users"
+    },
+    "immut_bak": {
+      "x": 520,
+      "y": 665,
+      "l": "Immutable Backup",
+      "zone": "Resilience",
+      "host": "air-gap object store",
+      "cls": "reg",
+      "tier": 1,
+      "eol": null,
+      "icon": "storage"
+    }
+  },
+  "layers": [
+    {
+      "id": "nerv",
+      "organ": "Nervous",
+      "arch": "Identity & Policy",
+      "color": "var(--nervous)",
+      "blend": true,
+      "flow": true,
+      "hub": "entra",
+      "edges": [
+        {
+          "a": "entra",
+          "b": "intune",
+          "proto": "SCIM",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "intune",
+          "b": "ca_pol",
+          "proto": "Graph",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "entra",
+          "b": "ca_pol",
+          "proto": "OIDC",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "ca_pol",
+          "b": "mfa_gw",
+          "proto": "FIDO2",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "ca_pol",
+          "b": "ztna_px",
+          "proto": "policy",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "mfa_gw",
+          "b": "ztna_px",
+          "proto": "token",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "entra",
+          "b": "ztna_px",
+          "proto": "SAML",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "pam",
+          "b": "fin_sys",
+          "proto": "session",
+          "port": 443,
+          "conn": "lan"
+        },
+        {
+          "a": "pam",
+          "b": "db_core",
+          "proto": "session",
+          "port": 443,
+          "conn": "lan"
+        }
+      ]
+    },
+    {
+      "id": "skel",
+      "organ": "Osseous",
+      "arch": "Access Fabric",
+      "color": "var(--skeleton)",
+      "blend": true,
+      "flow": true,
+      "edges": [
+        {
+          "a": "rmt_usr",
+          "b": "ztna_px",
+          "proto": "HTTPS",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "mob_usr",
+          "b": "ztna_px",
+          "proto": "HTTPS",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "ptnr",
+          "b": "ztna_px",
+          "proto": "HTTPS",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "branch",
+          "b": "ztna_px",
+          "proto": "IPsec",
+          "port": 4500,
+          "conn": "vpn"
+        },
+        {
+          "a": "ztna_px",
+          "b": "corp_app",
+          "proto": "HTTPS",
+          "port": 443,
+          "conn": "lan"
+        },
+        {
+          "a": "ztna_px",
+          "b": "dev_env",
+          "proto": "HTTPS",
+          "port": 443,
+          "conn": "lan"
+        },
+        {
+          "a": "ztna_px",
+          "b": "fin_sys",
+          "proto": "HTTPS",
+          "port": 443,
+          "conn": "lan"
+        },
+        {
+          "a": "ztna_px",
+          "b": "pam",
+          "proto": "HTTPS",
+          "port": 443,
+          "conn": "lan"
+        },
+        {
+          "a": "corp_app",
+          "b": "db_core",
+          "proto": "TDS",
+          "port": 1433,
+          "conn": "lan"
+        },
+        {
+          "a": "fin_sys",
+          "b": "db_core",
+          "proto": "TDS",
+          "port": 1433,
+          "conn": "lan"
+        }
+      ]
+    },
+    {
+      "id": "vasc",
+      "organ": "Vascular",
+      "arch": "Detection & Response",
+      "color": "var(--vascular)",
+      "blend": true,
+      "flow": true,
+      "edges": [
+        {
+          "a": "xdr",
+          "b": "rmt_usr",
+          "proto": "agent",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "xdr",
+          "b": "mob_usr",
+          "proto": "agent",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "xdr",
+          "b": "corp_app",
+          "proto": "agent",
+          "port": 443,
+          "conn": "lan"
+        },
+        {
+          "a": "siem",
+          "b": "xdr",
+          "proto": "syslog",
+          "port": 514,
+          "conn": "internet"
+        },
+        {
+          "a": "siem",
+          "b": "ztna_px",
+          "proto": "syslog",
+          "port": 514,
+          "conn": "internet"
+        },
+        {
+          "a": "siem",
+          "b": "ir_team",
+          "proto": "alert",
+          "port": 443,
+          "conn": "internet"
+        },
+        {
+          "a": "xdr",
+          "b": "ir_team",
+          "proto": "alert",
+          "port": 443,
+          "conn": "internet"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "organ": "Visceral",
+      "arch": "Backup & Recovery",
+      "color": "var(--lymph)",
+      "blend": true,
+      "flow": false,
+      "edges": [
+        {
+          "a": "db_core",
+          "b": "immut_bak",
+          "proto": "snapshot",
+          "conn": "repl",
+          "rpo": "4hr",
+          "rto": "8hr"
+        },
+        {
+          "a": "fin_sys",
+          "b": "immut_bak",
+          "proto": "backup",
+          "conn": "repl",
+          "rpo": "1hr",
+          "rto": "4hr"
+        },
+        {
+          "a": "corp_app",
+          "b": "immut_bak",
+          "proto": "backup",
+          "conn": "repl",
+          "rpo": "24hr",
+          "rto": "24hr"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f1",
+      "name": "Remote access → Finance",
+      "steps": [
+        "rmt_usr",
+        "ztna_px",
+        "mfa_gw",
+        "pam",
+        "fin_sys",
+        "db_core"
+      ],
+      "note": "All access authenticated at IdP, device-compliant, MFA-gated, brokered through PAM. No lateral movement possible — workloads never see raw credentials."
+    },
+    {
+      "id": "f2",
+      "name": "Identity chain: device → policy → access",
+      "steps": [
+        "intune",
+        "ca_pol",
+        "ztna_px",
+        "corp_app"
+      ],
+      "note": "Conditional Access evaluates device health signal from Intune before issuing token to ZTNA proxy."
+    },
+    {
+      "id": "f3",
+      "name": "Incident: SOC triage",
+      "steps": [
+        "xdr",
+        "siem",
+        "ir_team"
+      ],
+      "note": "EDR telemetry aggregates into SIEM; SOC analysts receive correlated alert and open IR playbook."
+    }
+  ]
+}

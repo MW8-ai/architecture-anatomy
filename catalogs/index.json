@@ -3,7 +3,7 @@
     {
       "file": "sovereign-boundary.json",
       "title": "Sovereign Cloud Boundary",
-      "description": "Commercial \u00b7 GCC \u00b7 GCC High reference. Models the .com vs .us sovereignty split and the non-native ADF \u2192 GCC High hop."
+      "description": "Commercial · GCC · GCC High reference. Models the .com vs .us sovereignty split and the non-native ADF → GCC High hop."
     },
     {
       "file": "zero-trust-access.json",
@@ -13,17 +13,22 @@
     {
       "file": "saas-platform.json",
       "title": "Cloud-Native SaaS Platform",
-      "description": "Multi-tenant SaaS reference \u2014 CDN, API gateway fan-out, async workers, Postgres primary/replica with 1-min RPO streaming repl, geo failover."
+      "description": "Multi-tenant SaaS reference — CDN, API gateway fan-out, async workers, Postgres primary/replica with 1-min RPO streaming repl, geo failover."
     },
     {
       "file": "ot-it-convergence.json",
       "title": "OT/IT Industrial Convergence",
-      "description": "Manufacturing / critical infrastructure. Hardware data diode enforces one-way OT\u2192IT flow. PLC \u2192 edge \u2192 DMZ \u2192 historian \u2192 analytics. SPOFs overlay lights up the data diode."
+      "description": "Manufacturing / critical infrastructure. Hardware data diode enforces one-way OT→IT flow. PLC → edge → DMZ → historian → analytics. SPOFs overlay lights up the data diode."
     },
     {
       "file": "catalogs/examples/sovereign-sample.json",
       "title": "Sovereign Sample (validation demo)",
       "description": "Phase A rules demo: unmet requirement, boundary violation, blast radius. Deliberately trips the validator."
+    },
+    {
+      "file": "catalogs/examples/governance-sample.json",
+      "title": "Zero-Trust + Governance Overlay",
+      "description": "The zero-trust reference annotated by plumbline_to_anatomy — per-node gov status, failing dev environment stained red, GOV compliance ring. Toggle the Governance overlay."
     }
   ]
 }
