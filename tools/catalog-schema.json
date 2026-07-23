@@ -30,6 +30,17 @@
             }
           }
         },
+        "governance": {
+          "type": "object",
+          "description": "Run provenance written by plumbline_to_anatomy (adapter v0).",
+          "properties": {
+            "generatedBy": { "type": "string" },
+            "asOf":        { "type": "string" },
+            "sources":     { "type": "array", "items": { "type": "string" } },
+            "annotated":   { "type": "integer" },
+            "failing":     { "type": "array", "items": { "type": "string" } }
+          }
+        },
         "revisions": {
           "type": "array",
           "items": {
@@ -73,7 +84,20 @@
           "owner":  { "type": "string" },
           "tier":   { "type": "integer", "enum": [1, 2, 3] },
           "eol":    { "type": ["string", "null"] },
-          "icon":   { "type": "string", "enum": ["cloud","db","storage","server","identity","users","network","generic"] }
+          "icon":   { "type": "string", "enum": ["cloud","db","storage","server","identity","users","network","generic"] },
+          "gov": {
+            "type": "object",
+            "description": "Governance verdict written by plumbline_to_anatomy.",
+            "required": ["status"],
+            "properties": {
+              "status": { "type": "string", "enum": ["pass", "warn", "fail", "unknown"] },
+              "fails":  { "type": "integer" },
+              "warns":  { "type": "integer" },
+              "gates":  { "type": "object", "additionalProperties": { "type": "string" } },
+              "source": { "type": "string" },
+              "asOf":   { "type": "string" }
+            }
+          }
         }
       }
     },
