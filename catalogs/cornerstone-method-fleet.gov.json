@@ -1,0 +1,294 @@
+{
+  "meta": {
+    "title": "The Cornerstone Method — Fleet",
+    "system": "MW8-ai governance loop (self-portrait)",
+    "version": "1.0",
+    "author": "MW8",
+    "classification": "",
+    "updated": "2026-07-23",
+    "revisions": [
+      {
+        "v": "1.0",
+        "date": "2026-07-23",
+        "who": "MW8",
+        "note": "Seven tools as one loop. Base for the nightly governance sync (adapter v0.2)."
+      }
+    ],
+    "governance": {
+      "generatedBy": "plumbline_to_anatomy",
+      "asOf": "2026-07-23T06:31:10+00:00",
+      "sources": [
+        "CloudIntelMatrix",
+        "architecture-anatomy",
+        "formwork",
+        "plumbline"
+      ],
+      "annotated": 4,
+      "failing": []
+    },
+    "scopes": []
+  },
+  "zones": [
+    {
+      "t": "Ground Truth",
+      "y0": 18,
+      "y1": 150
+    },
+    {
+      "t": "Standard & Assessment",
+      "y0": 150,
+      "y1": 320
+    },
+    {
+      "t": "Build & Verify",
+      "y0": 320,
+      "y1": 490
+    },
+    {
+      "t": "Reflect & Record",
+      "y0": 490,
+      "y1": 660
+    }
+  ],
+  "nodes": {
+    "cim": {
+      "x": 520,
+      "y": 88,
+      "l": "CloudIntelMatrix",
+      "zone": "Ground Truth",
+      "host": "MW8-ai/CloudIntelMatrix",
+      "cls": "conf",
+      "tier": 1,
+      "icon": "cloud",
+      "owner": "Know",
+      "gov": {
+        "status": "pass",
+        "fails": 0,
+        "warns": 0,
+        "gates": {
+          "secrets": "pass",
+          "link_freshness": "pass",
+          "project_pack": "pass"
+        },
+        "source": "CloudIntelMatrix",
+        "asOf": "2026-07-23T06:31:10+00:00"
+      }
+    },
+    "cornerstone": {
+      "x": 300,
+      "y": 235,
+      "l": "Architect's Cornerstone",
+      "zone": "Standard & Assessment",
+      "host": "MW8-ai/architects-cornerstone",
+      "cls": "int",
+      "tier": 2,
+      "icon": "generic",
+      "owner": "Define"
+    },
+    "assess": {
+      "x": 740,
+      "y": 235,
+      "l": "Review Framework",
+      "zone": "Standard & Assessment",
+      "host": "MW8-ai/AI-Cloud-Architect-Framework",
+      "cls": "int",
+      "tier": 2,
+      "icon": "identity",
+      "owner": "Assess"
+    },
+    "formwork": {
+      "x": 300,
+      "y": 405,
+      "l": "Formwork",
+      "zone": "Build & Verify",
+      "host": "MW8-ai/formwork",
+      "cls": "int",
+      "tier": 2,
+      "icon": "server",
+      "owner": "Shape",
+      "gov": {
+        "status": "warn",
+        "fails": 0,
+        "warns": 1,
+        "gates": {
+          "secrets": "pass",
+          "iac_scan": "warn",
+          "project_pack": "pass"
+        },
+        "source": "formwork",
+        "asOf": "2026-07-23T06:31:10+00:00"
+      }
+    },
+    "plumbline": {
+      "x": 740,
+      "y": 405,
+      "l": "Plumbline",
+      "zone": "Build & Verify",
+      "host": "MW8-ai/plumbline",
+      "cls": "int",
+      "tier": 1,
+      "icon": "network",
+      "owner": "Verify",
+      "gov": {
+        "status": "pass",
+        "fails": 0,
+        "warns": 0,
+        "gates": {
+          "secrets": "pass",
+          "workflow_audit": "pass",
+          "dependency_cves": "pass",
+          "project_pack": "pass"
+        },
+        "source": "plumbline",
+        "asOf": "2026-07-23T06:31:10+00:00"
+      }
+    },
+    "anatomy": {
+      "x": 300,
+      "y": 575,
+      "l": "Architecture Anatomy",
+      "zone": "Reflect & Record",
+      "host": "MW8-ai/architecture-anatomy",
+      "cls": "int",
+      "tier": 2,
+      "icon": "generic",
+      "owner": "Visualize",
+      "gov": {
+        "status": "pass",
+        "fails": 0,
+        "warns": 0,
+        "gates": {
+          "secrets": "pass",
+          "schema_drift": "pass",
+          "project_pack": "pass"
+        },
+        "source": "architecture-anatomy",
+        "asOf": "2026-07-23T06:31:10+00:00"
+      }
+    },
+    "ledger": {
+      "x": 740,
+      "y": 575,
+      "l": "Ledger",
+      "zone": "Reflect & Record",
+      "host": "MW8-ai/cornerstone-ledger",
+      "cls": "int",
+      "tier": 3,
+      "icon": "db",
+      "owner": "Record"
+    }
+  },
+  "layers": [
+    {
+      "id": "chain",
+      "organ": "Skeleton",
+      "arch": "Governance Flow",
+      "color": "#4FE3A3",
+      "flow": true,
+      "edges": [
+        {
+          "a": "cim",
+          "b": "cornerstone",
+          "dir": "->",
+          "proto": "facts"
+        },
+        {
+          "a": "cim",
+          "b": "assess",
+          "dir": "->",
+          "proto": "facts"
+        },
+        {
+          "a": "cim",
+          "b": "formwork",
+          "dir": "->",
+          "proto": "facts"
+        },
+        {
+          "a": "cornerstone",
+          "b": "assess",
+          "dir": "->",
+          "proto": "standard"
+        },
+        {
+          "a": "assess",
+          "b": "formwork",
+          "dir": "->",
+          "proto": "verdict"
+        },
+        {
+          "a": "assess",
+          "b": "plumbline",
+          "dir": "->",
+          "proto": "conditions"
+        },
+        {
+          "a": "formwork",
+          "b": "plumbline",
+          "dir": "->",
+          "proto": "build"
+        },
+        {
+          "a": "plumbline",
+          "b": "anatomy",
+          "dir": "->",
+          "proto": "report.json"
+        },
+        {
+          "a": "anatomy",
+          "b": "ledger",
+          "dir": "->",
+          "proto": "as-built"
+        }
+      ]
+    },
+    {
+      "id": "loop",
+      "organ": "Vascular",
+      "arch": "Feedback & Provenance",
+      "color": "#FFB454",
+      "edges": [
+        {
+          "a": "assess",
+          "b": "ledger",
+          "dir": "->",
+          "proto": "decision"
+        },
+        {
+          "a": "plumbline",
+          "b": "ledger",
+          "dir": "->",
+          "proto": "gate-cite"
+        },
+        {
+          "a": "anatomy",
+          "b": "cim",
+          "dir": "->",
+          "proto": "drift"
+        },
+        {
+          "a": "ledger",
+          "b": "cim",
+          "dir": "->",
+          "proto": "resolved"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "loop",
+      "name": "One decision through the loop",
+      "steps": [
+        "cim",
+        "cornerstone",
+        "assess",
+        "formwork",
+        "plumbline",
+        "anatomy",
+        "ledger"
+      ],
+      "note": "Know the facts, define the standard, assess the design, shape the build, verify every change, see the estate, record the decision."
+    }
+  ]
+}

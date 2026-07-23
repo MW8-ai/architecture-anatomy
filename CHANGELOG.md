@@ -2,6 +2,12 @@
 
 All notable changes to Architecture Anatomy.
 
+## v1.9.1
+- **Governance sync (Cornerstone adapter v0.2) — the loop automates.** New nightly `govsync` workflow pulls each governed repo's latest Plumbline `plumbline-report` artifact, runs `plumbline_to_anatomy` over the fleet catalog, and commits the annotated result. The wall diagram now updates itself.
+- **Fleet self-portrait**: `catalogs/cornerstone-method-fleet.json` (base — the seven Method tools as one loop) and `…-fleet.gov.json` (annotated). The estate that draws the estate.
+- `governance/fleet-mapping.yaml` (repo → node) and `governance/govsync.sh` (orchestration, testable standalone). `governance/README.md` documents the one-time human wiring: a fine-grained read-only `FLEET_READ_TOKEN`. Absent that secret the job no-ops — merging it changes nothing until switched on.
+- No renderer change; atlas app stays v1.9.0. This release is data + automation.
+
 ## v1.9.0
 - **Governance overlay (Cornerstone adapter v0.1) in the 2D atlas.** Nodes carrying a `gov` block (written by Plumbline's `plumbline_to_anatomy` adapter) get a status-colored ring + corner dot — green pass, amber warn, red fail (pulsing; static under `prefers-reduced-motion`), grey unknown. New "Governance Status" overlay toggle appears only when the loaded catalog has governance data; state persists in the share URL like every other overlay.
 - Readout gains a Governance row: verdict, source, as-of date, and the failing/warning gates by name.
