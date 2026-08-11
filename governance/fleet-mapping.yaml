@@ -1,0 +1,16 @@
+# Cornerstone Method fleet — governance mapping.
+# Links each governed repo's Plumbline report to the catalog node(s) it governs.
+# Consumed by the nightly govsync workflow (.github/workflows/govsync.yml),
+# which runs plumbline_to_anatomy over catalogs/cornerstone-method-fleet.json.
+#
+# Source name (left) MUST match the repo whose `plumbline-report` artifact is
+# downloaded. One report may annotate several nodes (a repo that is several
+# components). Nodes with no mapped/available report render as "unknown".
+map:
+  CloudIntelMatrix: [cim]
+  architects-cornerstone: [cornerstone]
+  AI-Cloud-Architect-Framework: [assess]
+  formwork: [formwork]
+  plumbline: [plumbline]
+  architecture-anatomy: [anatomy]
+  cornerstone-ledger: [ledger]
