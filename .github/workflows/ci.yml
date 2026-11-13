@@ -6,7 +6,7 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Fingerprint gate
         run: bash scripts/sanitize-check.sh
       - uses: actions/setup-node@v5
