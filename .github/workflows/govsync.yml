@@ -1,0 +1,86 @@
+name: govsync
+
+# Adapter v0.2 — automate the loop.
+# Nightly (and on demand): pull each governed repo's latest `plumbline-report`
+# artifact, run plumbline_to_anatomy over the fleet catalog, and commit the
+# annotated result. The wall diagram updates itself.
+#
+# WIRING (one-time, human): this job reads GitHub Actions artifacts from OTHER
+# repos, which the default GITHUB_TOKEN cannot do. Provide a fine-grained PAT
+# as the repo secret FLEET_READ_TOKEN with read-only "Actions" + "Contents"
+# access scoped to exactly the governed repos in governance/fleet-mapping.yaml,
+# 90-day expiry. Until that secret exists the job no-ops (it does not fail).
+# Minting/scoping that token is a human credential action — not automated here.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"   # 06:17 UTC nightly
+  workflow_dispatch:
+
+permissions:
+  contents: write          # to commit the regenerated .gov.json
+
+concurrency:
+  group: govsync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard — require FLEET_READ_TOKEN
+        id: guard
+        env:
+          FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+        run: |
+          if [ -z "$FLEET_READ_TOKEN" ]; then
+            echo "FLEET_READ_TOKEN not set — skipping (see governance/README.md)."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout Anatomy
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: true
+
+      - name: Checkout Plumbline (adapter source)
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: MW8-ai/plumbline
+          ref: main
+          path: .plumbline-src
+          token: ${{ secrets.FLEET_READ_TOKEN }}
+          persist-credentials: false
+
+      - name: Setup Python
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        if: steps.guard.outputs.run == 'true'
+        run: pip install "pyyaml>=6"
+
+      - name: Pull governed reports and annotate
+        if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+        run: bash governance/govsync.sh
+
+      - name: Commit if changed
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          if git diff --quiet -- catalogs/cornerstone-method-fleet.gov.json; then
+            echo "No governance change."
+            exit 0
+          fi
+          git config user.name "govsync-bot"
+          git config user.email "govsync@users.noreply.github.com"
+          git add catalogs/cornerstone-method-fleet.gov.json
+          git commit -m "govsync: refresh fleet governance overlay [skip ci]"
+          git push

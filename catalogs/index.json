@@ -29,6 +29,16 @@
       "file": "catalogs/examples/governance-sample.json",
       "title": "Zero-Trust + Governance Overlay",
       "description": "The zero-trust reference annotated by plumbline_to_anatomy — per-node gov status, failing dev environment stained red, GOV compliance ring. Toggle the Governance overlay."
+    },
+    {
+      "file": "catalogs/cornerstone-method-fleet.gov.json",
+      "title": "Cornerstone Method — Fleet (governed)",
+      "description": "The seven Method tools as one loop, annotated nightly by plumbline_to_anatomy with each tool's own Plumbline verdict. Toggle the Governance overlay. The self-portrait: the estate that draws the estate."
+    },
+    {
+      "file": "catalogs/cornerstone-method-fleet.json",
+      "title": "Cornerstone Method — Fleet (base)",
+      "description": "Un-annotated base catalog of the Method loop. The nightly govsync job reads this and writes the governed version."
     }
   ]
 }
